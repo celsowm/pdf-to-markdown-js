@@ -1,6 +1,10 @@
 # PDF to Markdown
 
-A TypeScript library that converts PDF files to Markdown using a custom-built parser, following SOLID principles and without external PDF parsing libraries.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+
+A high-performance, zero-dependency TypeScript library that converts PDF files to clean Markdown. Built from the ground up following SOLID principles, it provides a robust and extensible engine for document transformation without relying on heavy external PDF parsing libraries.
 
 ## 🌐 Interactive Playground
 
@@ -16,13 +20,13 @@ A TypeScript library that converts PDF files to Markdown using a custom-built pa
 
 ## Features
 
-- **Custom PDF Parser**: Built from scratch without relying on external PDF libraries
-- **SOLID Principles**: Designed with clean architecture and SOLID principles
-- **Extensible Transformers**: Easy to add new content detection strategies
-- **Type-Safe**: Full TypeScript support with comprehensive type definitions
-- **Test Coverage**: Includes integration tests with generated PDF fixtures
-- **Multiple Distribution Formats**: CommonJS, ES Modules, and minified browser version
-- **URL Support**: Convert PDFs directly from URLs
+- **🚀 Zero Dependencies**: No external PDF libraries required.
+- **🛠️ SOLID Architecture**: Highly maintainable and extensible codebase.
+- **📊 Advanced Table Extraction**: Multiple detection techniques (Lattice, Stream, SCA, etc.) to handle complex layouts.
+- **🌐 Browser & Node.js Support**: Works seamlessly in both environments with dedicated builds.
+- **🔍 Intelligent Content Detection**: Automatic detection of headings, lists, tables, and formatted text.
+- **🔗 URL Direct Conversion**: Convert PDFs directly from public URLs.
+- **💪 Type-Safe**: Written entirely in TypeScript with full type definitions.
 
 ## Installation
 
@@ -65,32 +69,81 @@ import { PdfToMarkdown } from 'pdf-to-markdown';
 
 ### Advanced Usage
 
+#### Custom Conversion Options
+
+Fine-tune how tables and other elements are extracted:
+
+```typescript
+import { PdfToMarkdown } from 'pdf-to-markdown';
+
+const options = {
+  table: {
+    tolerance: 4.5,
+    autoDetectHeader: true,
+    registry: {
+      weights: [
+        { name: 'Lattice', enabled: true, weight: 0.9 },
+        { name: 'Stream', enabled: true, weight: 0.7 }
+      ]
+    }
+  }
+};
+
+const markdown = await PdfToMarkdown.fromUrl('https://example.com/report.pdf', options);
+```
+
+#### Manual Pipeline Control
+
+For full control over the conversion process, you can use the underlying components:
+
 ```typescript
 import {
   PdfReader,
   PdfParser,
   MarkdownWriter,
   HeadingTransformer,
+  TableTransformer,
   ListTransformer,
   ParagraphTransformer,
 } from 'pdf-to-markdown';
 
-// Create custom transformers
+// 1. Initialize Reader with a buffer
+const buffer = await getPdfBuffer();
+const pdfReader = PdfReader.fromBuffer(buffer);
+
+// 2. Configure Transformers
 const transformers = [
   new HeadingTransformer(),
+  new TableTransformer({ tolerance: 3 }),
   new ListTransformer(),
   new ParagraphTransformer(),
 ];
 
-// Parse PDF
-const pdfReader = PdfReader.fromFile('./document.pdf');
+// 3. Parse to AST
 const pdfParser = new PdfParser(pdfReader, transformers);
 const markdownAst = pdfParser.parse();
 
-// Convert to markdown string
+// 4. Generate Markdown
 const markdownWriter = new MarkdownWriter();
 const markdown = markdownWriter.write(markdownAst);
 ```
+
+## Configuration
+
+### `PdfToMarkdownOptions`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `table` | `TableTransformerConfig` | Configuration for table detection and extraction. |
+
+### `TableTransformerConfig`
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `tolerance` | `number` | `3` | Distance tolerance for aligning text into columns/rows. |
+| `autoDetectHeader` | `boolean` | `true` | Whether to automatically identify the first row as a header. |
+| `minConfidence` | `number` | `0.4` | Threshold for keeping detected tables (0.0 to 1.0). |
+| `registry` | `object` | - | Configuration for individual detectors and their weights. |
 
 ## Architecture
 
@@ -104,11 +157,13 @@ const markdown = markdownWriter.write(markdownAst);
 
 ### Transformers
 
-Transformers follow the Strategy pattern and convert text elements to Markdown AST nodes:
+Transformers follow the Strategy pattern and convert text elements to Markdown AST nodes. They are executed in priority order:
 
-- **HeadingTransformer**: Detects headings based on font size and weight
-- **ListTransformer**: Detects ordered and unordered lists
-- **ParagraphTransformer**: Fallback transformer for regular paragraphs
+- **HeadingTransformer**: Detects document structure based on font characteristics and relative positioning.
+- **TableTransformer**: A multi-engine orchestrator that uses various techniques (Lattice, Stream, Graph-based, etc.) to detect and reconstruct tables.
+- **ListTransformer**: Identifies ordered and unordered list patterns.
+- **InlineFormatterTransformer**: Handles bold, italic, and other text styles.
+- **ParagraphTransformer**: The fallback engine that ensures all text is captured in meaningful blocks.
 
 ### Models
 
