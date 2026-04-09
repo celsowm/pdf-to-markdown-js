@@ -35,6 +35,16 @@ export class PdfToMarkdown {
   }
 
   /**
+   * Converts a PDF from binary string to Markdown string (for browser).
+   * @param binaryString Binary string representation of PDF
+   * @returns Promise resolving to Markdown string
+   */
+  static async fromBinary(binaryString: string): Promise<string> {
+    const pdfReader = PdfReader.fromBinaryString(binaryString);
+    return this.convert(pdfReader);
+  }
+
+  /**
    * Converts a PDF from a URL to Markdown string.
    * @param url URL to the PDF file
    * @returns Promise resolving to Markdown string

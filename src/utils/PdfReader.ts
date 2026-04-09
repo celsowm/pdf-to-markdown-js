@@ -47,6 +47,15 @@ export class PdfReader {
   }
 
   /**
+   * Creates a PdfReader from a binary string (for browser compatibility).
+   */
+  static fromBinaryString(binaryString: string): PdfReader {
+    const reader = Object.create(PdfReader.prototype);
+    reader.buffer = binaryString;
+    return reader;
+  }
+
+  /**
    * Gets the raw binary content of the PDF.
    */
   getBinaryContent(): Buffer {

@@ -2,6 +2,15 @@
 
 A TypeScript library that converts PDF files to Markdown using a custom-built parser, following SOLID principles and without external PDF parsing libraries.
 
+## 🌐 Interactive Playground
+
+Try the library in your browser with our [interactive playground](https://your-username.github.io/pdf-to-markdown-js/playground/)!
+
+- Upload PDF files and convert them to Markdown
+- Convert PDFs from URLs
+- View live preview of converted content
+- Download the Markdown output
+
 ## Features
 
 - **Custom PDF Parser**: Built from scratch without relying on external PDF libraries
@@ -9,6 +18,8 @@ A TypeScript library that converts PDF files to Markdown using a custom-built pa
 - **Extensible Transformers**: Easy to add new content detection strategies
 - **Type-Safe**: Full TypeScript support with comprehensive type definitions
 - **Test Coverage**: Includes integration tests with generated PDF fixtures
+- **Multiple Distribution Formats**: CommonJS, ES Modules, and minified browser version
+- **URL Support**: Convert PDFs directly from URLs
 
 ## Installation
 
@@ -32,6 +43,25 @@ import * as fs from 'fs';
 const buffer = fs.readFileSync('./document.pdf');
 const markdown = await PdfToMarkdown.fromBuffer(buffer);
 console.log(markdown);
+
+// From URL (Node.js 18+)
+const markdown = await PdfToMarkdown.fromUrl('https://example.com/document.pdf');
+console.log(markdown);
+```
+
+### Distribution Formats
+
+The library is available in multiple formats:
+
+```javascript
+// CommonJS (Node.js)
+const { PdfToMarkdown } = require('pdf-to-markdown');
+
+// ES Modules (Modern bundlers)
+import { PdfToMarkdown } from 'pdf-to-markdown';
+
+// Browser (Minified)
+// <script src="pdf-to-markdown/dist/index.min.js"></script>
 ```
 
 ### Advanced Usage
