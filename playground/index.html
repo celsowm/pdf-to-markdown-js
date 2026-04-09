@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF to Markdown - Playground</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
+  <script src="../dist/index.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <div class="logo-text">
+            <h1>PDF to Markdown</h1>
+            <p class="subtitle">Interactive Playground</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <a href="https://github.com/your-username/pdf-to-markdown-js" target="_blank" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Input Section -->
+      <section class="input-section">
+        <div class="card">
+          <div class="card-header">
+            <h2>Input PDF</h2>
+            <div class="tabs">
+              <button class="tab active" data-tab="file">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Upload File
+              </button>
+              <button class="tab" data-tab="url">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                From URL
+              </button>
+              <button class="tab" data-tab="paste">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                </svg>
+                Paste Text
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- File Upload Tab -->
+            <div class="tab-content active" id="tab-file">
+              <div class="upload-zone" id="uploadZone">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p class="upload-text">
+                  <strong>Click to upload</strong> or drag and drop
+                </p>
+                <p class="upload-hint">PDF files only</p>
+                <input type="file" id="fileInput" accept=".pdf" hidden>
+              </div>
+              <div class="file-info hidden" id="fileInfo">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span id="fileName">document.pdf</span>
+                <span class="file-size" id="fileSize">(0 KB)</span>
+                <button class="btn-remove" id="btnRemove">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- URL Tab -->
+            <div class="tab-content" id="tab-url">
+              <div class="form-group">
+                <label for="urlInput">PDF URL</label>
+                <input 
+                  type="url" 
+                  id="urlInput" 
+                  placeholder="https://example.com/document.pdf"
+                  class="input-url"
+                >
+                <p class="help-text">Enter a public URL to a PDF file</p>
+              </div>
+              <div class="sample-urls">
+                <p class="label">Try sample PDFs:</p>
+                <button class="btn-sample" data-url="https://arxiv.org/pdf/1706.03762.pdf">
+                  Attention Is All You Need
+                </button>
+                <button class="btn-sample" data-url="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf">
+                  Dummy PDF
+                </button>
+              </div>
+            </div>
+
+            <!-- Paste Tab -->
+            <div class="tab-content" id="tab-paste">
+              <div class="info-box">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <div>
+                  <p class="info-title">Paste PDF Content</p>
+                  <p class="info-desc">
+                    This feature is limited. Please upload a PDF file or provide a URL instead.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button class="btn btn-primary" id="convertBtn" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 11 12 14 22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              Convert to Markdown
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Output Section -->
+      <section class="output-section">
+        <div class="card">
+          <div class="card-header">
+            <h2>Markdown Output</h2>
+            <div class="output-tabs">
+              <button class="tab active" data-output="preview">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Preview
+              </button>
+              <button class="tab" data-output="raw">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6"/>
+                  <polyline points="8 6 2 12 8 18"/>
+                </svg>
+                Raw
+              </button>
+            </div>
+            <div class="output-actions">
+              <button class="btn-icon" id="copyBtn" title="Copy to clipboard" disabled>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+              </button>
+              <button class="btn-icon" id="downloadBtn" title="Download Markdown" disabled>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Loading State -->
+            <div class="loading hidden" id="loading">
+              <div class="spinner"></div>
+              <p class="loading-text">Converting PDF to Markdown...</p>
+            </div>
+
+            <!-- Error State -->
+            <div class="error-box hidden" id="errorBox">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              <p id="errorMsg">An error occurred</p>
+            </div>
+
+            <!-- Preview -->
+            <div class="output-content active" id="outputPreview">
+              <div class="markdown-body" id="previewContent"></div>
+            </div>
+
+            <!-- Raw -->
+            <div class="output-content" id="outputRaw">
+              <pre><code class="language-markdown" id="rawContent"></code></pre>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <p class="empty-title">No markdown yet</p>
+              <p class="empty-desc">Upload a PDF or provide a URL to get started</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <p>Built with ❤️ using TypeScript and SOLID principles</p>
+        <div class="footer-links">
+          <a href="https://github.com/your-username/pdf-to-markdown-js" target="_blank">Documentation</a>
+          <span class="separator">•</span>
+          <a href="https://github.com/your-username/pdf-to-markdown-js/issues" target="_blank">Issues</a>
+          <span class="separator">•</span>
+          <a href="https://github.com/your-username/pdf-to-markdown-js/blob/main/LICENSE" target="_blank">MIT License</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
