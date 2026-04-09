@@ -1,5 +1,3 @@
-import * as fs from 'fs';
-
 /**
  * Represents a cross-reference entry in the PDF.
  */
@@ -29,14 +27,6 @@ export class PdfReader {
 
   constructor(buffer: Buffer) {
     this.buffer = buffer.toString('binary');
-  }
-
-  /**
-   * Creates a PdfReader from a file path.
-   */
-  static fromFile(filePath: string): PdfReader {
-    const buffer = fs.readFileSync(filePath);
-    return new PdfReader(buffer);
   }
 
   /**

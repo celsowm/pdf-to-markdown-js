@@ -55,6 +55,11 @@
     // Actions
     copyBtn: document.getElementById('copyBtn'),
     downloadBtn: document.getElementById('downloadBtn'),
+
+    // Settings
+    tableTolerance: document.getElementById('tableTolerance'),
+    toleranceValue: document.getElementById('toleranceValue'),
+    detectorCheckboxes: document.querySelectorAll('input[data-detector]'),
   };
 
   /**
@@ -67,6 +72,7 @@
     setupConvertButton();
     setupOutputTabs();
     setupActions();
+    setupSettings();
   }
 
   /**
@@ -217,10 +223,11 @@
 
     try {
       const arrayBuffer = await currentFile.arrayBuffer();
+      const options = getOptions();
       
       // Convert ArrayBuffer to binary string for PdfReader
       const binaryString = arrayBufferToBinary(arrayBuffer);
-      const markdown = await PdfToMarkdown.fromBinary(binaryString);
+      const markdown = await PdfToMarkdown.fromBinary(binaryString, options);
 
       showOutput(markdown);
     } catch (error) {
@@ -236,7 +243,8 @@
     showLoading();
 
     try {
-      const markdown = await PdfToMarkdown.fromUrl(currentUrl);
+      const options = getOptions();
+      const markdown = await PdfToMarkdown.fromUrl(currentUrl, options);
       showOutput(markdown);
     } catch (error) {
       console.error('Conversion error:', error);
@@ -263,6 +271,36 @@
         elements.outputContents[outputType].classList.add('active');
       });
     });
+  }
+
+  /**
+   * Setup settings inputs
+   */
+  function setupSettings() {
+    elements.tableTolerance.addEventListener('input', (e) => {
+      elements.toleranceValue.textContent = e.target.value;
+    });
+  }
+
+  /**
+   * Get current conversion options from UI
+   */
+  function getOptions() {
+    const tolerance = parseFloat(elements.tableTolerance.value);
+    const weights = Array.from(elements.detectorCheckboxes).map(cb => ({
+      name: cb.dataset.detector,
+      enabled: cb.checked,
+      weight: 0.5 // Default weight
+    }));
+
+    return {
+      table: {
+        tolerance: tolerance,
+        registry: {
+          weights: weights
+        }
+      }
+    };
   }
 
   /**

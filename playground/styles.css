@@ -632,3 +632,55 @@ body {
 .card {
   animation: fadeIn 0.3s ease;
 }
+
+/* Settings */
+.settings-card {
+  margin-top: 1.5rem;
+}
+
+.settings-group h3 {
+  font-size: 0.9rem;
+  color: var(--accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+}
+
+.setting-item {
+  margin-bottom: 1.5rem;
+}
+
+.setting-item label {
+  display: block;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.setting-item input[type="range"] {
+  width: 100%;
+  margin-right: 1rem;
+}
+
+.value-display {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.checkbox-item input {
+  cursor: pointer;
+}
