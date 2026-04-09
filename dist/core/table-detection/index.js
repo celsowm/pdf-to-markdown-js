@@ -1,0 +1,28 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createStandardRegistry = exports.DetectorRegistry = exports.EntropyDetector = exports.VisualSignatureDetector = exports.MorphologyDetector = exports.GraphBasedDetector = exports.SCADetector = exports.AnchorZoningDetector = exports.RXYCutDetector = exports.StreamDetector = exports.LatticeDetector = exports.DEFAULT_REGISTRY_CONFIG = exports.DEFAULT_DETECTION_CONFIG = void 0;
+var TableTypes_1 = require("./TableTypes");
+Object.defineProperty(exports, "DEFAULT_DETECTION_CONFIG", { enumerable: true, get: function () { return TableTypes_1.DEFAULT_DETECTION_CONFIG; } });
+Object.defineProperty(exports, "DEFAULT_REGISTRY_CONFIG", { enumerable: true, get: function () { return TableTypes_1.DEFAULT_REGISTRY_CONFIG; } });
+var LatticeDetector_1 = require("./LatticeDetector");
+Object.defineProperty(exports, "LatticeDetector", { enumerable: true, get: function () { return LatticeDetector_1.LatticeDetector; } });
+var StreamDetector_1 = require("./StreamDetector");
+Object.defineProperty(exports, "StreamDetector", { enumerable: true, get: function () { return StreamDetector_1.StreamDetector; } });
+var RXYCutDetector_1 = require("./RXYCutDetector");
+Object.defineProperty(exports, "RXYCutDetector", { enumerable: true, get: function () { return RXYCutDetector_1.RXYCutDetector; } });
+var AnchorZoningDetector_1 = require("./AnchorZoningDetector");
+Object.defineProperty(exports, "AnchorZoningDetector", { enumerable: true, get: function () { return AnchorZoningDetector_1.AnchorZoningDetector; } });
+var SCADetector_1 = require("./SCADetector");
+Object.defineProperty(exports, "SCADetector", { enumerable: true, get: function () { return SCADetector_1.SCADetector; } });
+var GraphBasedDetector_1 = require("./GraphBasedDetector");
+Object.defineProperty(exports, "GraphBasedDetector", { enumerable: true, get: function () { return GraphBasedDetector_1.GraphBasedDetector; } });
+var MorphologyDetector_1 = require("./MorphologyDetector");
+Object.defineProperty(exports, "MorphologyDetector", { enumerable: true, get: function () { return MorphologyDetector_1.MorphologyDetector; } });
+var VisualSignatureDetector_1 = require("./VisualSignatureDetector");
+Object.defineProperty(exports, "VisualSignatureDetector", { enumerable: true, get: function () { return VisualSignatureDetector_1.VisualSignatureDetector; } });
+var EntropyDetector_1 = require("./EntropyDetector");
+Object.defineProperty(exports, "EntropyDetector", { enumerable: true, get: function () { return EntropyDetector_1.EntropyDetector; } });
+var DetectorRegistry_1 = require("./DetectorRegistry");
+Object.defineProperty(exports, "DetectorRegistry", { enumerable: true, get: function () { return DetectorRegistry_1.DetectorRegistry; } });
+Object.defineProperty(exports, "createStandardRegistry", { enumerable: true, get: function () { return DetectorRegistry_1.createStandardRegistry; } });
+//# sourceMappingURL=index.js.map
