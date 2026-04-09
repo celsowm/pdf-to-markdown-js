@@ -18,6 +18,7 @@
       file: document.getElementById('tab-file'),
       url: document.getElementById('tab-url'),
       paste: document.getElementById('tab-paste'),
+      settings: document.getElementById('tab-settings'),
     },
 
     // File Upload
