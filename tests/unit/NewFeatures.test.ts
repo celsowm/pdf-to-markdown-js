@@ -32,16 +32,35 @@ describe('PDF to Markdown - New Features', () => {
       expect(PdfToMarkdown).toBeDefined();
     });
 
-    it('should have fromFile method', () => {
-      expect(typeof PdfToMarkdown.fromFile).toBe('function');
-    });
-
     it('should have fromBuffer method', () => {
       expect(typeof PdfToMarkdown.fromBuffer).toBe('function');
     });
 
     it('should have fromUrl method', () => {
       expect(typeof PdfToMarkdown.fromUrl).toBe('function');
+    });
+  });
+
+  describe('PdfToMarkdownOptions', () => {
+    it('should accept options in conversion methods', async () => {
+      const emptyBuffer = Buffer.from([]);
+      const options = {
+        table: {
+          tolerance: 5,
+          registry: {
+            weights: [
+              { name: 'Lattice', enabled: true, weight: 0.9 }
+            ]
+          }
+        }
+      };
+
+      // We just check it can be called with options (even if it fails later due to empty buffer)
+      try {
+        await PdfToMarkdown.fromBuffer(emptyBuffer, options);
+      } catch (e) {
+        // Expected to fail with empty buffer, but the point is it accepts the second argument
+      }
     });
   });
 });

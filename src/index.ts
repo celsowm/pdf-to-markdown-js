@@ -7,7 +7,18 @@ import {
   ParagraphTransformer,
   InlineFormatterTransformer,
   TableTransformer,
+  TableTransformerConfig,
 } from './transformers';
+
+/**
+ * Configuration options for PdfToMarkdown.
+ */
+export interface PdfToMarkdownOptions {
+  /**
+   * Configuration for table detection and extraction.
+   */
+  readonly table?: TableTransformerConfig;
+}
 
 /**
  * Main API for converting PDF to Markdown.
@@ -15,41 +26,34 @@ import {
  */
 export class PdfToMarkdown {
   /**
-   * Converts a PDF file to Markdown string.
-   * @param filePath Path to the PDF file
-   * @returns Promise resolving to Markdown string
-   */
-  static async fromFile(filePath: string): Promise<string> {
-    const pdfReader = PdfReader.fromFile(filePath);
-    return this.convert(pdfReader);
-  }
-
-  /**
    * Converts a PDF buffer to Markdown string.
    * @param buffer PDF file buffer
+   * @param options Conversion options
    * @returns Promise resolving to Markdown string
    */
-  static async fromBuffer(buffer: Buffer): Promise<string> {
+  static async fromBuffer(buffer: Buffer, options?: PdfToMarkdownOptions): Promise<string> {
     const pdfReader = PdfReader.fromBuffer(buffer);
-    return this.convert(pdfReader);
+    return this.convert(pdfReader, options);
   }
 
   /**
    * Converts a PDF from binary string to Markdown string (for browser).
    * @param binaryString Binary string representation of PDF
+   * @param options Conversion options
    * @returns Promise resolving to Markdown string
    */
-  static async fromBinary(binaryString: string): Promise<string> {
+  static async fromBinary(binaryString: string, options?: PdfToMarkdownOptions): Promise<string> {
     const pdfReader = PdfReader.fromBinaryString(binaryString);
-    return this.convert(pdfReader);
+    return this.convert(pdfReader, options);
   }
 
   /**
    * Converts a PDF from a URL to Markdown string.
    * @param url URL to the PDF file
+   * @param options Conversion options
    * @returns Promise resolving to Markdown string
    */
-  static async fromUrl(url: string): Promise<string> {
+  static async fromUrl(url: string, options?: PdfToMarkdownOptions): Promise<string> {
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -59,17 +63,17 @@ export class PdfToMarkdown {
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    return this.fromBuffer(buffer);
+    return this.fromBuffer(buffer, options);
   }
 
   /**
    * Internal conversion method.
    */
-  private static convert(pdfReader: PdfReader): string {
+  private static convert(pdfReader: PdfReader, options: PdfToMarkdownOptions = {}): string {
     // Create transformers (order matters - priority sorted)
     const transformers = [
       new HeadingTransformer(),
-      new TableTransformer(),
+      new TableTransformer(options.table),
       new InlineFormatterTransformer(),
       new ListTransformer(),
       new ParagraphTransformer(),
