@@ -4,12 +4,15 @@ A TypeScript library that converts PDF files to Markdown using a custom-built pa
 
 ## 🌐 Interactive Playground
 
-Try the library in your browser with our [interactive playground](https://your-username.github.io/pdf-to-markdown-js/playground/)!
+> [!IMPORTANT]
+> **[🚀 Try the PDF to Markdown Interactive Playground!](https://your-username.github.io/pdf-to-markdown-js/playground/)**
+>
+> *Experience fast, clean PDF-to-Markdown conversion right in your browser. Fine-tune extraction settings and see results in real-time.*
 
-- Upload PDF files and convert them to Markdown
-- Convert PDFs from URLs
-- View live preview of converted content
-- Download the Markdown output
+- **Interactive Settings:** Choose between different table extraction techniques (Lattice, Stream, R-XY-Cut, etc.)
+- **Live Preview:** See rendered Markdown instantly
+- **Multi-Source:** Upload local files or fetch from public URLs
+- **Instant Export:** Copy to clipboard or download as `.md`
 
 ## Features
 
@@ -33,10 +36,6 @@ npm install pdf-to-markdown
 
 ```typescript
 import { PdfToMarkdown } from 'pdf-to-markdown';
-
-// From file
-const markdown = await PdfToMarkdown.fromFile('./document.pdf');
-console.log(markdown);
 
 // From buffer
 import * as fs from 'fs';
@@ -227,13 +226,17 @@ The project includes comprehensive tests:
 
 ## API Reference
 
-### `PdfToMarkdown.fromFile(filePath: string): Promise<string>`
-
-Converts a PDF file to Markdown string.
-
-### `PdfToMarkdown.fromBuffer(buffer: Buffer): Promise<string>`
+### `PdfToMarkdown.fromBuffer(buffer: Buffer, options?: PdfToMarkdownOptions): Promise<string>`
 
 Converts a PDF buffer to Markdown string.
+
+### `PdfToMarkdown.fromBinary(binaryString: string, options?: PdfToMarkdownOptions): Promise<string>`
+
+Converts a PDF from binary string to Markdown string (ideal for browser usage).
+
+### `PdfToMarkdown.fromUrl(url: string, options?: PdfToMarkdownOptions): Promise<string>`
+
+Converts a PDF from a URL to Markdown string.
 
 ## Limitations
 
