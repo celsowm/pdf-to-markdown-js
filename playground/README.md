@@ -4,7 +4,7 @@ An interactive web application to test and explore the PDF to Markdown conversio
 
 ## 🌐 Live Demo
 
-Visit the live playground at: https://your-username.github.io/pdf-to-markdown-js/playground/
+Visit the live playground at: https://celsowm.github.io/pdf-to-markdown-js/playground/
 
 ## 🚀 Features
 

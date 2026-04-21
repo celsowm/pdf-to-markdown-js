@@ -7,9 +7,9 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/esm/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./min": {
       "import": "./dist/index.min.js",
@@ -47,12 +47,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/pdf-to-markdown-js"
+    "url": "https://github.com/celsowm/pdf-to-markdown-js"
   },
   "bugs": {
-    "url": "https://github.com/your-username/pdf-to-markdown-js/issues"
+    "url": "https://github.com/celsowm/pdf-to-markdown-js/issues"
   },
-  "homepage": "https://github.com/your-username/pdf-to-markdown-js#readme",
+  "homepage": "https://github.com/celsowm/pdf-to-markdown-js#readme",
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
