@@ -27,7 +27,7 @@ endobj
 endobj
 5 0 obj
 <<
-/Author (\(anonymous\)) /CreationDate (D:20260408181038-03'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260408181038-03'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+/Author (\(anonymous\)) /CreationDate (D:20260421201015+00'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260421201015+00'00') /Producer (ReportLab PDF Library - \(opensource\))
   /Subject (\(unspecified\)) /Title (\(anonymous\)) /Trapped /False
 >>
 endobj
@@ -38,10 +38,39 @@ endobj
 endobj
 7 0 obj
 <<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 412
+/Length 687
 >>
 stream
-Gat=ebtc/1&;9LtME(`n:l"Oa"@4=Z%Nsj:*62n)rX!@qd^NlF(.tX-#NR.f<]f@;Fp04?`9OBCE8TT$.Ng2t1PiWDd6-Ho.6\*Dl+FaHeST3dg143YH,29+lQfTnei&_W9pJFJRbgI%,8#nSX@CWF$!gB&dlq2K;NFjJUG,6%F-8m490=N!i0,u]_MpIAXGe^W?Km7[fHqr@IdM?:jpfQQ:ACHW8g\d23QTcRPDkO`:BNDdo%E-aQaugjQhA+,F%hVND/mp:(OY:OS/J-cUQr2-_p!j(M3j!3mZ*_[@NS(oU",6A*`g&\M-5+]40U1GBpJ#tP4.F(5;aaSPZ:K,HP[G=ZTq9_irc6\6NahX]'ei+s':XVJ)N27O!EoV*k.&^jEf/:X_&#r6'GUBB1;>"llF$F~>endstream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+q
+1 0 0 1 78 690 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL (This is a simple text document with basic paragraphs. It contains multiple sentences to test the text) Tj T* (extraction capabilities.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 678 cm
+Q
+q
+1 0 0 1 78 654 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL (The second paragraph demonstrates regular text flow. PDF parsers should be able to extract this text) Tj T* (correctly and convert it to markdown format.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 642 cm
+Q
+q
+1 0 0 1 78 630 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (A third paragraph to ensure multiple paragraphs are handled properly.) Tj T* ET
+Q
+Q
+
+endstream
 endobj
 xref
 0 8
@@ -56,7 +85,7 @@ xref
 trailer
 <<
 /ID 
-[<8db2d20de637c43a13548bb7694f4f07><8db2d20de637c43a13548bb7694f4f07>]
+[<a7928984fd60a1fe7bb59dd055a4e60b><a7928984fd60a1fe7bb59dd055a4e60b>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 5 0 R
@@ -64,5 +93,5 @@ trailer
 /Size 8
 >>
 startxref
-1301
+1536
 %%EOF

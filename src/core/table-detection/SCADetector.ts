@@ -17,7 +17,13 @@
  * - DIP: Depends on ITableDetector abstraction
  */
 
-import { ITableDetector, DetectedTable, TableCell, DetectionConfig, DetectorCategory } from './TableTypes';
+import {
+  ITableDetector,
+  DetectedTable,
+  TableCell,
+  DetectionConfig,
+  DetectorCategory,
+} from './TableTypes';
 import { TextElement } from '../../models/TextElement';
 
 /**
@@ -100,7 +106,7 @@ export class SCADetector implements ITableDetector {
 
   getConfidence(table: DetectedTable): number {
     const expectedCells = table.rows * table.cols;
-    const filledCells = table.cells.filter(c => c.content).length;
+    const filledCells = table.cells.filter((c) => c.content).length;
 
     if (filledCells === 0) return 0;
 
@@ -113,10 +119,7 @@ export class SCADetector implements ITableDetector {
 
   // ─── Histogram Building ──────────────────────────────────────────────
 
-  private buildHistogram(
-    elements: TextElement[],
-    config: DetectionConfig
-  ): HistBin[] {
+  private buildHistogram(elements: TextElement[], config: DetectionConfig): HistBin[] {
     if (elements.length === 0) return [];
 
     const binSize = config.tolerance * 1.5;
@@ -158,20 +161,23 @@ export class SCADetector implements ITableDetector {
   private findSpikes(
     histogram: HistBin[],
     elements: TextElement[],
-    config: DetectionConfig
+    config: DetectionConfig,
   ): ColumnSpike[] {
     if (histogram.length === 0) return [];
 
     // Calculate statistics
-    const counts = histogram.map(b => b.count);
+    const counts = histogram.map((b) => b.count);
     const meanCount = counts.reduce((a, b) => a + b, 0) / counts.length;
     const stdDev = Math.sqrt(
-      counts.reduce((sum, c) => sum + Math.pow(c - meanCount, 2), 0) / counts.length
+      counts.reduce((sum, c) => sum + Math.pow(c - meanCount, 2), 0) / counts.length,
     );
 
     // Threshold: mean + 1 std deviation
     const spikeThreshold = meanCount + stdDev * 1.0;
-    const minRowCount = Math.max(2, Math.ceil(elements.length / this.estimateRowCount(elements) * 0.3));
+    const minRowCount = Math.max(
+      2,
+      Math.ceil((elements.length / this.estimateRowCount(elements)) * 0.3),
+    );
 
     const spikes: ColumnSpike[] = [];
 
@@ -202,14 +208,14 @@ export class SCADetector implements ITableDetector {
   private findSpikesRelaxed(
     histogram: HistBin[],
     elements: TextElement[],
-    config: DetectionConfig
+    config: DetectionConfig,
   ): ColumnSpike[] {
     if (histogram.length === 0) return [];
 
-    const counts = histogram.map(b => b.count);
+    const counts = histogram.map((b) => b.count);
     const meanCount = counts.reduce((a, b) => a + b, 0) / counts.length;
     const stdDev = Math.sqrt(
-      counts.reduce((sum, c) => sum + Math.pow(c - meanCount, 2), 0) / counts.length
+      counts.reduce((sum, c) => sum + Math.pow(c - meanCount, 2), 0) / counts.length,
     );
 
     // Lower threshold for relaxed mode
@@ -272,10 +278,7 @@ export class SCADetector implements ITableDetector {
 
   // ─── Column Selection ────────────────────────────────────────────────
 
-  private selectBestColumns(
-    spikes: ColumnSpike[],
-    config: DetectionConfig
-  ): number[][] {
+  private selectBestColumns(spikes: ColumnSpike[], config: DetectionConfig): number[][] {
     if (spikes.length < config.minCols) return [];
 
     // Sort by score descending
@@ -286,9 +289,7 @@ export class SCADetector implements ITableDetector {
     const minSpacing = config.tolerance * 4;
 
     for (const spike of sorted) {
-      const tooClose = selected.some(
-        pos => Math.abs(pos - spike.xPosition) < minSpacing
-      );
+      const tooClose = selected.some((pos) => Math.abs(pos - spike.xPosition) < minSpacing);
 
       if (!tooClose) {
         selected.push(spike.xPosition);
@@ -314,7 +315,7 @@ export class SCADetector implements ITableDetector {
   private buildTableFromColumns(
     elements: TextElement[],
     colPositions: number[],
-    config: DetectionConfig
+    config: DetectionConfig,
   ): DetectedTable | null {
     if (colPositions.length < config.minCols) return null;
 
@@ -328,20 +329,23 @@ export class SCADetector implements ITableDetector {
 
     for (let r = 0; r < rows.length; r++) {
       const rowY = rows[r][0]?.y ?? 0;
-      const nextRowY = r < rows.length - 1 ? rows[r + 1][0]?.y ?? 0 : rowY - 20;
+      const nextRowY = r < rows.length - 1 ? (rows[r + 1][0]?.y ?? 0) : rowY - 20;
 
       for (let c = 0; c < colPositions.length; c++) {
         const x1 = colPositions[c];
         const x2 = c < colPositions.length - 1 ? colPositions[c + 1] : x1 + 50;
 
         // Find elements that align with this column
-        const cellElements = rows[r].filter(el => {
+        const cellElements = rows[r].filter((el) => {
           // Check if element's left edge or center is near column position
           const leftEdgeDist = Math.abs(el.x - x1);
           const centerDist = Math.abs(el.x + el.width / 2 - x1);
           const withinColumn = el.x >= x1 - config.tolerance * 2 && el.x < x2 + config.tolerance;
 
-          return (leftEdgeDist <= config.tolerance * 2 || centerDist <= config.tolerance * 2) && withinColumn;
+          return (
+            (leftEdgeDist <= config.tolerance * 2 || centerDist <= config.tolerance * 2) &&
+            withinColumn
+          );
         });
 
         cells.push({
@@ -351,18 +355,22 @@ export class SCADetector implements ITableDetector {
           y1: rowY,
           x2,
           y2: nextRowY,
-          content: cellElements.map(e => e.text).join(' ').trim() || undefined,
+          content:
+            cellElements
+              .map((e) => e.text)
+              .join(' ')
+              .trim() || undefined,
         });
       }
     }
 
     // Verify we have meaningful content
-    const filledCells = cells.filter(c => c.content).length;
+    const filledCells = cells.filter((c) => c.content).length;
     if (filledCells < config.minRows * Math.ceil(config.minCols * 0.5)) return null;
 
     const x1 = Math.min(...colPositions);
     const x2 = colPositions[colPositions.length - 1] + 50;
-    const yPositions = rows.map(r => r[0]?.y ?? 0);
+    const yPositions = rows.map((r) => r[0]?.y ?? 0);
     const y1 = Math.max(...yPositions);
     const y2 = Math.min(...yPositions) - 20;
 
@@ -383,10 +391,7 @@ export class SCADetector implements ITableDetector {
 
   // ─── Utility Methods ─────────────────────────────────────────────────
 
-  private groupElementsByY(
-    elements: TextElement[],
-    tolerance: number
-  ): TextElement[][] {
+  private groupElementsByY(elements: TextElement[], tolerance: number): TextElement[][] {
     const sorted = [...elements].sort((a, b) => b.y - a.y);
     const rows: TextElement[][] = [];
 
@@ -427,7 +432,7 @@ export class SCADetector implements ITableDetector {
     if (elements.length === 0) return 0;
 
     const avgHeight = elements.reduce((sum, el) => sum + el.height, 0) / elements.length;
-    const yPositions = elements.map(el => el.y);
+    const yPositions = elements.map((el) => el.y);
     const minY = Math.min(...yPositions);
     const maxY = Math.max(...yPositions);
 
@@ -445,13 +450,14 @@ export class SCADetector implements ITableDetector {
     const secondRow = rows[1];
 
     // Bold text in first row
-    if (firstRow.some(el => el.isBold)) {
+    if (firstRow.some((el) => el.isBold)) {
       return true;
     }
 
     // Larger font in first row
     const avgFirstFontSize = firstRow.reduce((sum, el) => sum + el.fontSize, 0) / firstRow.length;
-    const avgSecondFontSize = secondRow.reduce((sum, el) => sum + el.fontSize, 0) / secondRow.length;
+    const avgSecondFontSize =
+      secondRow.reduce((sum, el) => sum + el.fontSize, 0) / secondRow.length;
 
     if (avgFirstFontSize > avgSecondFontSize * 1.1) {
       return true;

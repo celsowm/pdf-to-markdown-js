@@ -15,7 +15,13 @@
  * 5. Validate rectangularity and grid regularity
  */
 
-import { ITableDetector, DetectedTable, TableCell, DetectionConfig, DetectorCategory } from './TableTypes';
+import {
+  ITableDetector,
+  DetectedTable,
+  TableCell,
+  DetectionConfig,
+  DetectorCategory,
+} from './TableTypes';
 import { TextElement } from '../../models/TextElement';
 
 interface BoundingBox {
@@ -80,7 +86,7 @@ export class MorphologyDetector implements ITableDetector {
 
     const cellArea = table.cells.reduce(
       (sum, cell) => sum + (cell.x2 - cell.x1) * (cell.y2 - cell.y1),
-      0
+      0,
     );
 
     const coverageScore = Math.min(cellArea / blobArea, 1.0) * 0.4;
@@ -106,12 +112,7 @@ export class MorphologyDetector implements ITableDetector {
    * Checks if two bounding boxes overlap.
    */
   private boxesOverlap(a: BoundingBox, b: BoundingBox): boolean {
-    return !(
-      a.x2 < b.x1 ||
-      b.x2 < a.x1 ||
-      a.y2 < b.y1 ||
-      b.y2 < a.y1
-    );
+    return !(a.x2 < b.x1 || b.x2 < a.x1 || a.y2 < b.y1 || b.y2 < a.y1);
   }
 
   /**
@@ -236,7 +237,7 @@ export class MorphologyDetector implements ITableDetector {
   private buildTableFromBlob(
     blob: Blob,
     elements: ReadonlyArray<TextElement>,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): DetectedTable | null {
     const { mergedBox } = blob;
 
@@ -246,24 +247,16 @@ export class MorphologyDetector implements ITableDetector {
         el.x >= mergedBox.x1 &&
         el.x + el.width <= mergedBox.x2 &&
         el.y >= mergedBox.y1 &&
-        el.y + el.height <= mergedBox.y2
+        el.y + el.height <= mergedBox.y2,
     );
 
     if (containedElements.length === 0) return null;
 
     // Detect row boundaries by clustering Y positions
-    const rowGroups = this.clusterElements(
-      containedElements,
-      (el) => el.y,
-      config.tolerance
-    );
+    const rowGroups = this.clusterElements(containedElements, (el) => el.y, config.tolerance);
 
     // Detect column boundaries by clustering X positions
-    const colGroups = this.clusterElements(
-      containedElements,
-      (el) => el.x,
-      config.tolerance
-    );
+    const colGroups = this.clusterElements(containedElements, (el) => el.x, config.tolerance);
 
     const rows = rowGroups.length;
     const cols = colGroups.length;
@@ -277,7 +270,7 @@ export class MorphologyDetector implements ITableDetector {
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const cellElements = containedElements.filter(
-          (el) => rowGroups[r].includes(el) && colGroups[c].includes(el)
+          (el) => rowGroups[r].includes(el) && colGroups[c].includes(el),
         );
 
         if (cellElements.length > 0) {
@@ -297,14 +290,10 @@ export class MorphologyDetector implements ITableDetector {
           });
         } else {
           // Empty cell: estimate from grid
-          const rowYAvg =
-            rowGroups[r].reduce((s, el) => s + el.y, 0) / rowGroups[r].length;
-          const colXAvg =
-            colGroups[c].reduce((s, el) => s + el.x, 0) / colGroups[c].length;
-          const avgH =
-            rowGroups[r].reduce((s, el) => s + el.height, 0) / rowGroups[r].length;
-          const avgW =
-            colGroups[c].reduce((s, el) => s + el.width, 0) / colGroups[c].length;
+          const rowYAvg = rowGroups[r].reduce((s, el) => s + el.y, 0) / rowGroups[r].length;
+          const colXAvg = colGroups[c].reduce((s, el) => s + el.x, 0) / colGroups[c].length;
+          const avgH = rowGroups[r].reduce((s, el) => s + el.height, 0) / rowGroups[r].length;
+          const avgW = colGroups[c].reduce((s, el) => s + el.width, 0) / colGroups[c].length;
 
           cells.push({
             rowIndex: r,
@@ -319,12 +308,9 @@ export class MorphologyDetector implements ITableDetector {
     }
 
     // Detect header
-    const firstRowElements = containedElements.filter((el) =>
-      rowGroups[0].includes(el)
-    );
+    const firstRowElements = containedElements.filter((el) => rowGroups[0].includes(el));
     const avgFontSize =
-      containedElements.reduce((s, el) => s + el.fontSize, 0) /
-      containedElements.length;
+      containedElements.reduce((s, el) => s + el.fontSize, 0) / containedElements.length;
     const hasHeader =
       firstRowElements.length > 0 &&
       (firstRowElements.some((el) => el.isBold) ||
@@ -351,13 +337,11 @@ export class MorphologyDetector implements ITableDetector {
   private clusterElements(
     elements: ReadonlyArray<TextElement>,
     project: (el: TextElement) => number,
-    tolerance: number
+    tolerance: number,
   ): TextElement[][] {
     if (elements.length === 0) return [];
 
-    const sorted = [...elements].sort(
-      (a, b) => project(a) - project(b)
-    );
+    const sorted = [...elements].sort((a, b) => project(a) - project(b));
 
     const groups: TextElement[][] = [];
     let currentGroup: TextElement[] = [sorted[0]];
@@ -367,9 +351,7 @@ export class MorphologyDetector implements ITableDetector {
       const val = project(sorted[i]);
       if (Math.abs(val - currentCenter) <= tolerance) {
         currentGroup.push(sorted[i]);
-        currentCenter =
-          currentGroup.reduce((s, el) => s + project(el), 0) /
-          currentGroup.length;
+        currentCenter = currentGroup.reduce((s, el) => s + project(el), 0) / currentGroup.length;
       } else {
         groups.push(currentGroup);
         currentGroup = [sorted[i]];

@@ -17,7 +17,13 @@
  * - DIP: Depends on ITableDetector abstraction
  */
 
-import { ITableDetector, DetectedTable, TableCell, DetectionConfig, DetectorCategory } from './TableTypes';
+import {
+  ITableDetector,
+  DetectedTable,
+  TableCell,
+  DetectionConfig,
+  DetectorCategory,
+} from './TableTypes';
 import { TextElement } from '../../models/TextElement';
 
 /**
@@ -100,13 +106,13 @@ export class RXYCutDetector implements ITableDetector {
   private recursiveCut(
     region: XYRegion,
     config: DetectionConfig,
-    cutHorizontalFirst: boolean
+    cutHorizontalFirst: boolean,
   ): XYRegion {
     if (
       region.elements.length < 4 ||
       region.depth >= 8 ||
-      (region.x2 - region.x1) < 50 ||
-      (region.y2 - region.y1) < 30
+      region.x2 - region.x1 < 50 ||
+      region.y2 - region.y1 < 30
     ) {
       return region; // Leaf node
     }
@@ -141,7 +147,7 @@ export class RXYCutDetector implements ITableDetector {
 
   private findLargestGap(
     elements: TextElement[],
-    cutHorizontal: boolean
+    cutHorizontal: boolean,
   ): { left: TextElement[]; right: TextElement[]; splitPos: number; gapSize: number } | null {
     if (elements.length < 2) return null;
 
@@ -184,9 +190,7 @@ export class RXYCutDetector implements ITableDetector {
   }
 
   private getGapThreshold(region: XYRegion, cutHorizontal: boolean): number {
-    const span = cutHorizontal
-      ? region.x2 - region.x1
-      : region.y2 - region.y1;
+    const span = cutHorizontal ? region.x2 - region.x1 : region.y2 - region.y1;
     return Math.max(span * 0.15, 10);
   }
 
@@ -195,7 +199,10 @@ export class RXYCutDetector implements ITableDetector {
   private buildRegion(elements: TextElement[], depth: number): XYRegion | null {
     if (elements.length === 0) return null;
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
 
     for (const el of elements) {
       minX = Math.min(minX, el.x);
@@ -219,15 +226,12 @@ export class RXYCutDetector implements ITableDetector {
     if (region.children.length === 0) {
       return [region];
     }
-    return region.children.flatMap(child => this.collectLeaves(child));
+    return region.children.flatMap((child) => this.collectLeaves(child));
   }
 
   // ─── Table Construction from Regions ─────────────────────────────────
 
-  private buildTableFromRegion(
-    region: XYRegion,
-    config: DetectionConfig
-  ): DetectedTable | null {
+  private buildTableFromRegion(region: XYRegion, config: DetectionConfig): DetectedTable | null {
     if (region.elements.length < config.minRows * config.minCols) {
       return null;
     }
@@ -238,7 +242,7 @@ export class RXYCutDetector implements ITableDetector {
 
   private buildTableFromProjection(
     elements: TextElement[],
-    config: DetectionConfig
+    config: DetectionConfig,
   ): DetectedTable | null {
     const rows = this.groupElementsByY(elements, config.tolerance);
 
@@ -255,15 +259,15 @@ export class RXYCutDetector implements ITableDetector {
 
     for (let r = 0; r < rows.length; r++) {
       const rowY = rows[r][0]?.y ?? 0;
-      const nextRowY = r < rows.length - 1 ? rows[r + 1][0]?.y ?? 0 : rowY - 20;
+      const nextRowY = r < rows.length - 1 ? (rows[r + 1][0]?.y ?? 0) : rowY - 20;
 
       for (let c = 0; c < colPositions.length; c++) {
         const x1 = colPositions[c];
         const x2 = c < colPositions.length - 1 ? colPositions[c + 1] : x1 + 50;
 
         // Check if any element falls in this cell
-        const cellElements = rows[r].filter(el =>
-          el.x >= x1 - config.tolerance && el.x < x2 + config.tolerance
+        const cellElements = rows[r].filter(
+          (el) => el.x >= x1 - config.tolerance && el.x < x2 + config.tolerance,
         );
 
         if (cellElements.length > 0) {
@@ -277,7 +281,11 @@ export class RXYCutDetector implements ITableDetector {
           y1: rowY,
           x2,
           y2: nextRowY,
-          content: cellElements.map(e => e.text).join(' ').trim() || undefined,
+          content:
+            cellElements
+              .map((e) => e.text)
+              .join(' ')
+              .trim() || undefined,
         });
       }
     }
@@ -286,7 +294,7 @@ export class RXYCutDetector implements ITableDetector {
 
     const x1 = Math.min(...colPositions);
     const x2 = colPositions[colPositions.length - 1] + 50;
-    const yPositions = rows.map(r => r[0]?.y ?? 0);
+    const yPositions = rows.map((r) => r[0]?.y ?? 0);
     const y1 = Math.max(...yPositions);
     const y2 = Math.min(...yPositions) - 20;
 
@@ -305,10 +313,7 @@ export class RXYCutDetector implements ITableDetector {
     };
   }
 
-  private groupElementsByY(
-    elements: TextElement[],
-    tolerance: number
-  ): TextElement[][] {
+  private groupElementsByY(elements: TextElement[], tolerance: number): TextElement[][] {
     const sorted = [...elements].sort((a, b) => b.y - a.y);
     const rows: TextElement[][] = [];
 
@@ -337,10 +342,10 @@ export class RXYCutDetector implements ITableDetector {
   private findConsistentColumns(
     rows: TextElement[][],
     tolerance: number,
-    minCols: number
+    minCols: number,
   ): number[] {
     // Collect all X positions
-    const allXPositions = rows.flatMap(row => row.map(el => el.x));
+    const allXPositions = rows.flatMap((row) => row.map((el) => el.x));
     if (allXPositions.length === 0) return [];
 
     // Cluster X positions
@@ -348,10 +353,10 @@ export class RXYCutDetector implements ITableDetector {
 
     // Keep only clusters that appear in enough rows
     const minRowCount = Math.max(2, Math.ceil(rows.length * 0.4));
-    const consistent = clusters.filter(clusterCenter => {
+    const consistent = clusters.filter((clusterCenter) => {
       let rowCount = 0;
       for (const row of rows) {
-        if (row.some(el => Math.abs(el.x - clusterCenter) <= tolerance * 3)) {
+        if (row.some((el) => Math.abs(el.x - clusterCenter) <= tolerance * 3)) {
           rowCount++;
         }
       }
@@ -389,16 +394,19 @@ export class RXYCutDetector implements ITableDetector {
     if (table.cells.length === 0) return 0;
 
     // Measure regularity of cell widths and heights
-    const widths = table.cells.map(c => c.x2 - c.x1);
-    const heights = table.cells.map(c => Math.abs(c.y2 - c.y1));
+    const widths = table.cells.map((c) => c.x2 - c.x1);
+    const heights = table.cells.map((c) => Math.abs(c.y2 - c.y1));
 
     const avgWidth = widths.reduce((a, b) => a + b, 0) / widths.length;
     const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
 
     if (avgWidth === 0 || avgHeight === 0) return 0;
 
-    const widthVariance = widths.reduce((sum, w) => sum + Math.pow((w - avgWidth) / avgWidth, 2), 0) / widths.length;
-    const heightVariance = heights.reduce((sum, h) => sum + Math.pow((h - avgHeight) / avgHeight, 2), 0) / heights.length;
+    const widthVariance =
+      widths.reduce((sum, w) => sum + Math.pow((w - avgWidth) / avgWidth, 2), 0) / widths.length;
+    const heightVariance =
+      heights.reduce((sum, h) => sum + Math.pow((h - avgHeight) / avgHeight, 2), 0) /
+      heights.length;
 
     // Lower variance = higher regularity
     return Math.max(0, 1 - (widthVariance + heightVariance) / 2);

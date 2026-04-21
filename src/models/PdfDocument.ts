@@ -13,7 +13,7 @@ export interface PdfDocument {
  */
 export function createPdfDocument(
   pages: ReadonlyArray<Page>,
-  metadata: Readonly<Record<string, string>> = {}
+  metadata: Readonly<Record<string, string>> = {},
 ): PdfDocument {
   return {
     pages,

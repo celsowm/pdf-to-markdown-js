@@ -93,7 +93,11 @@ export class ContentStreamParser {
       }
 
       // Skip unknown content until next operator
+      const prevPos = this.position;
       this.skipUntilOperator();
+      if (this.position === prevPos) {
+        this.position++;
+      }
     }
 
     return operations;
@@ -118,7 +122,7 @@ export class ContentStreamParser {
    */
   private tryParseTextOperator(
     fontName: string | undefined,
-    fontSize: number | undefined
+    fontSize: number | undefined,
   ): TextOperation | null {
     const startPosition = this.position;
 
@@ -148,7 +152,13 @@ export class ContentStreamParser {
     // Check for Tj (string)
     if (this.streamContent[this.position] === '(') {
       const text = this.parseParenthesizedString();
-      if (text !== null && this.streamContent[this.position] === 'T') {
+      this.skipWhitespace();
+      if (
+        text !== null &&
+        this.position < this.streamContent.length &&
+        this.streamContent[this.position] === 'T' &&
+        this.streamContent[this.position + 1] === 'j'
+      ) {
         this.position++; // Skip T
         this.position++; // Skip j
         return {
@@ -273,7 +283,8 @@ export class ContentStreamParser {
    */
   private tryParseTextMatrix(): TextOperation | null {
     // Look for pattern: number number number number number number Tm
-    const tmPattern = /([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+Tm/;
+    const tmPattern =
+      /([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+Tm/;
     const substring = this.streamContent.substring(this.position);
     const match = tmPattern.exec(substring);
 
@@ -326,9 +337,7 @@ export class ContentStreamParser {
     const startPosition = this.position;
 
     // T* - move to next line
-    if (
-      this.streamContent.substring(this.position, this.position + 2) === 'T*'
-    ) {
+    if (this.streamContent.substring(this.position, this.position + 2) === 'T*') {
       this.position += 2;
       return { type: 'moveToNextLine' };
     }

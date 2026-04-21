@@ -10,12 +10,11 @@ export class TableExtractor {
    */
   extractTableContent(
     table: DetectedTable,
-    allTextElements: ReadonlyArray<TextElement>
+    allTextElements: ReadonlyArray<TextElement>,
   ): string[][] {
     // Initialize empty table
-    const tableContent: string[][] = Array.from(
-      { length: table.rows },
-      () => Array(table.cols).fill('')
+    const tableContent: string[][] = Array.from({ length: table.rows }, () =>
+      Array(table.cols).fill(''),
     );
 
     // Assign text elements to cells
@@ -30,18 +29,13 @@ export class TableExtractor {
     }
 
     // Trim whitespace from all cells
-    return tableContent.map((row) =>
-      row.map((cell) => cell.trim())
-    );
+    return tableContent.map((row) => row.map((cell) => cell.trim()));
   }
 
   /**
    * Finds which cell a text element belongs to based on position.
    */
-  private findCellForTextElement(
-    textEl: TextElement,
-    cells: TableCell[]
-  ): TableCell | null {
+  private findCellForTextElement(textEl: TextElement, cells: TableCell[]): TableCell | null {
     // Calculate center point of text element
     const textCenterX = textEl.x + textEl.width / 2;
     const textCenterY = textEl.y - textEl.height / 2; // PDF Y is inverted
@@ -81,7 +75,7 @@ export class TableExtractor {
    */
   filterTextElementsForTable(
     table: DetectedTable,
-    allTextElements: ReadonlyArray<TextElement>
+    allTextElements: ReadonlyArray<TextElement>,
   ): TextElement[] {
     const padding = 5; // Small padding around table
 
@@ -90,7 +84,7 @@ export class TableExtractor {
         el.x >= table.x1 - padding &&
         el.x <= table.x2 + padding &&
         el.y >= table.y1 - padding &&
-        el.y <= table.y2 + padding
+        el.y <= table.y2 + padding,
     );
   }
 }

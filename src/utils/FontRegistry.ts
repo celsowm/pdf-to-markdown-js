@@ -197,9 +197,7 @@ export class FontRegistry {
     const weightMatch = lower.match(/(\d{3})/);
     if (weightMatch) {
       const numericWeight = parseInt(weightMatch[1], 10);
-      if (
-        [100, 200, 300, 400, 500, 600, 700, 800, 900].includes(numericWeight)
-      ) {
+      if ([100, 200, 300, 400, 500, 600, 700, 800, 900].includes(numericWeight)) {
         return numericWeight;
       }
     }

@@ -16,7 +16,13 @@
  * - DIP: Depends on ITableDetector abstraction
  */
 
-import { ITableDetector, DetectedTable, TableCell, DetectionConfig, DetectorCategory } from './TableTypes';
+import {
+  ITableDetector,
+  DetectedTable,
+  TableCell,
+  DetectionConfig,
+  DetectorCategory,
+} from './TableTypes';
 import { TextElement } from '../../models/TextElement';
 
 /**
@@ -43,11 +49,33 @@ interface AnchorZone {
  * Default anchor keywords commonly found in tables/forms.
  */
 const DEFAULT_ANCHOR_KEYWORDS = [
-  'total', 'name', 'date', 'amount', 'description', 'item',
-  'price', 'qty', 'quantity', 'id', 'no', '#',
-  'subtotal', 'tax', 'discount', 'unit', 'cost',
-  'rate', 'hours', 'payment', 'invoice', 'reference',
-  'product', 'service', 'category', 'code', 'sku',
+  'total',
+  'name',
+  'date',
+  'amount',
+  'description',
+  'item',
+  'price',
+  'qty',
+  'quantity',
+  'id',
+  'no',
+  '#',
+  'subtotal',
+  'tax',
+  'discount',
+  'unit',
+  'cost',
+  'rate',
+  'hours',
+  'payment',
+  'invoice',
+  'reference',
+  'product',
+  'service',
+  'category',
+  'code',
+  'sku',
 ];
 
 /**
@@ -105,7 +133,7 @@ export class AnchorZoningDetector implements ITableDetector {
 
   getConfidence(table: DetectedTable): number {
     const expectedCells = table.rows * table.cols;
-    const actualCells = table.cells.filter(c => c.content).length;
+    const actualCells = table.cells.filter((c) => c.content).length;
     if (actualCells === 0) return 0;
 
     const fillRate = actualCells / expectedCells;
@@ -146,7 +174,7 @@ export class AnchorZoningDetector implements ITableDetector {
   private buildZones(
     anchors: AnchorMatch[],
     allElements: TextElement[],
-    config: DetectionConfig
+    config: DetectionConfig,
   ): AnchorZone[] {
     // Group anchors that are close together (same table region)
     const clusters = this.clusterAnchors(anchors, config.tolerance * 10);
@@ -157,7 +185,10 @@ export class AnchorZoningDetector implements ITableDetector {
       if (cluster.length < 2) continue;
 
       // Compute bounding box of the cluster
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
 
       for (const anchor of cluster) {
         minX = Math.min(minX, anchor.element.x);
@@ -216,9 +247,10 @@ export class AnchorZoningDetector implements ITableDetector {
         if (used.has(j)) continue;
 
         // Check proximity to any element in cluster
-        const closeToCluster = cluster.some(a =>
-          Math.abs(a.element.x - anchors[j].element.x) <= tolerance &&
-          Math.abs(a.element.y - anchors[j].element.y) <= tolerance * 3
+        const closeToCluster = cluster.some(
+          (a) =>
+            Math.abs(a.element.x - anchors[j].element.x) <= tolerance &&
+            Math.abs(a.element.y - anchors[j].element.y) <= tolerance * 3,
         );
 
         if (closeToCluster) {
@@ -234,19 +266,14 @@ export class AnchorZoningDetector implements ITableDetector {
   }
 
   private isAnchorElement(el: TextElement, cluster: AnchorMatch[]): boolean {
-    return cluster.some(a =>
-      a.element.x === el.x &&
-      a.element.y === el.y &&
-      a.element.text === el.text
+    return cluster.some(
+      (a) => a.element.x === el.x && a.element.y === el.y && a.element.text === el.text,
     );
   }
 
   // ─── Table Building from Zone ────────────────────────────────────────
 
-  private buildTableFromZone(
-    zone: AnchorZone,
-    config: DetectionConfig
-  ): DetectedTable | null {
+  private buildTableFromZone(zone: AnchorZone, config: DetectionConfig): DetectedTable | null {
     const allElements = [zone.anchor.element, ...zone.elements];
     const rows = this.groupElementsByY(allElements, config.tolerance);
 
@@ -262,19 +289,19 @@ export class AnchorZoningDetector implements ITableDetector {
   private findColumnsFromZone(
     rows: TextElement[][],
     _zone: AnchorZone,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): number[] {
-    const allX = rows.flatMap(r => r.map(el => el.x));
+    const allX = rows.flatMap((r) => r.map((el) => el.x));
     if (allX.length === 0) return [];
 
     // Cluster X positions with tighter tolerance
     const clusters = this.clusterPositions(allX, config.tolerance);
 
     // Keep clusters with enough representatives
-    const consistent = clusters.filter(center => {
+    const consistent = clusters.filter((center) => {
       let count = 0;
       for (const row of rows) {
-        if (row.some(el => Math.abs(el.x - center) <= config.tolerance * 1.5)) {
+        if (row.some((el) => Math.abs(el.x - center) <= config.tolerance * 1.5)) {
           count++;
         }
       }
@@ -290,7 +317,7 @@ export class AnchorZoningDetector implements ITableDetector {
   private buildGlobalAnchorTable(
     elements: TextElement[],
     _anchors: AnchorMatch[],
-    config: DetectionConfig
+    config: DetectionConfig,
   ): DetectedTable | null {
     // Use anchor positions to define a global table region
     const allElements = [...elements];
@@ -299,12 +326,12 @@ export class AnchorZoningDetector implements ITableDetector {
 
     if (rows.length < config.minRows) return null;
 
-    const allX = rows.flatMap(r => r.map(el => el.x));
+    const allX = rows.flatMap((r) => r.map((el) => el.x));
     const colPositions = this.clusterPositions(allX, config.tolerance)
-      .filter(c => {
+      .filter((c) => {
         let count = 0;
         for (const row of rows) {
-          if (row.some(el => Math.abs(el.x - c) <= config.tolerance * 1.5)) {
+          if (row.some((el) => Math.abs(el.x - c) <= config.tolerance * 1.5)) {
             count++;
           }
         }
@@ -319,10 +346,7 @@ export class AnchorZoningDetector implements ITableDetector {
 
   // ─── Utility Methods ─────────────────────────────────────────────────
 
-  private groupElementsByY(
-    elements: TextElement[],
-    tolerance: number
-  ): TextElement[][] {
+  private groupElementsByY(elements: TextElement[], tolerance: number): TextElement[][] {
     const sorted = [...elements].sort((a, b) => b.y - a.y);
     const rows: TextElement[][] = [];
 
@@ -373,20 +397,20 @@ export class AnchorZoningDetector implements ITableDetector {
   private constructTable(
     rows: TextElement[][],
     colPositions: number[],
-    config: DetectionConfig
+    config: DetectionConfig,
   ): DetectedTable {
     const cells: TableCell[] = [];
 
     for (let r = 0; r < rows.length; r++) {
       const rowY = rows[r][0]?.y ?? 0;
-      const nextRowY = r < rows.length - 1 ? rows[r + 1][0]?.y ?? 0 : rowY - 20;
+      const nextRowY = r < rows.length - 1 ? (rows[r + 1][0]?.y ?? 0) : rowY - 20;
 
       for (let c = 0; c < colPositions.length; c++) {
         const x1 = colPositions[c];
         const x2 = c < colPositions.length - 1 ? colPositions[c + 1] : x1 + 50;
 
-        const cellElements = rows[r].filter(el =>
-          el.x >= x1 - config.tolerance && el.x < x2 + config.tolerance
+        const cellElements = rows[r].filter(
+          (el) => el.x >= x1 - config.tolerance && el.x < x2 + config.tolerance,
         );
 
         cells.push({
@@ -396,14 +420,18 @@ export class AnchorZoningDetector implements ITableDetector {
           y1: rowY,
           x2,
           y2: nextRowY,
-          content: cellElements.map(e => e.text).join(' ').trim() || undefined,
+          content:
+            cellElements
+              .map((e) => e.text)
+              .join(' ')
+              .trim() || undefined,
         });
       }
     }
 
     const x1 = Math.min(...colPositions);
     const x2 = colPositions[colPositions.length - 1] + 50;
-    const yPositions = rows.map(r => r[0]?.y ?? 0);
+    const yPositions = rows.map((r) => r[0]?.y ?? 0);
     const y1 = Math.max(...yPositions);
     const y2 = Math.min(...yPositions) - 20;
 
@@ -427,7 +455,7 @@ export class AnchorZoningDetector implements ITableDetector {
 
     // Header detection: first row has bold text or significantly different formatting
     const firstRow = rows[0];
-    if (firstRow.some(el => el.isBold || el.fontSize > (rows[1]?.[0]?.fontSize ?? 0) * 1.1)) {
+    if (firstRow.some((el) => el.isBold || el.fontSize > (rows[1]?.[0]?.fontSize ?? 0) * 1.1)) {
       return true;
     }
 

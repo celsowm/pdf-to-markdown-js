@@ -1,9 +1,5 @@
 import { TextElement } from '../models/TextElement';
-import {
-  MarkdownNode,
-  createTextNode,
-  InlineFormatting,
-} from '../models/MarkdownNode';
+import { MarkdownNode, createTextNode, InlineFormatting } from '../models/MarkdownNode';
 import { MarkdownTransformer } from './MarkdownTransformer';
 
 /**
@@ -20,10 +16,7 @@ export class InlineFormatterTransformer implements MarkdownTransformer {
     return elements.length > 0;
   }
 
-  transform(
-    elements: TextElement[],
-    _allElements: TextElement[]
-  ): MarkdownNode[] {
+  transform(elements: TextElement[], _allElements: TextElement[]): MarkdownNode[] {
     const nodes: MarkdownNode[] = [];
 
     for (const element of elements) {

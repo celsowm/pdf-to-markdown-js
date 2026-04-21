@@ -15,7 +15,13 @@
  * 5. Support user-defined templates via config
  */
 
-import { ITableDetector, DetectedTable, TableCell, DetectionConfig, DetectorCategory } from './TableTypes';
+import {
+  ITableDetector,
+  DetectedTable,
+  TableCell,
+  DetectionConfig,
+  DetectorCategory,
+} from './TableTypes';
 import { TextElement } from '../../models/TextElement';
 
 /**
@@ -179,11 +185,7 @@ const FORM_TEMPLATE: TableTemplate = {
   minCols: 2,
 };
 
-const BUILTIN_TEMPLATES: TableTemplate[] = [
-  INVOICE_TEMPLATE,
-  RECEIPT_TEMPLATE,
-  FORM_TEMPLATE,
-];
+const BUILTIN_TEMPLATES: TableTemplate[] = [INVOICE_TEMPLATE, RECEIPT_TEMPLATE, FORM_TEMPLATE];
 
 export class VisualSignatureDetector implements ITableDetector {
   private readonly config: VisualSignatureConfig;
@@ -213,10 +215,7 @@ export class VisualSignatureDetector implements ITableDetector {
     const bitmask = this.generateBitmask(elements, config);
 
     // Step 2: Match against all templates
-    const allTemplates = [
-      ...BUILTIN_TEMPLATES,
-      ...(this.config.templates || []),
-    ];
+    const allTemplates = [...BUILTIN_TEMPLATES, ...(this.config.templates || [])];
 
     const matches: { template: TableTemplate; score: number }[] = [];
 
@@ -234,12 +233,7 @@ export class VisualSignatureDetector implements ITableDetector {
     // Step 3: Extract tables from matched templates
     const tables: DetectedTable[] = [];
     for (const match of matches) {
-      const table = this.extractTableFromTemplate(
-        match.template,
-        match.score,
-        elements,
-        config
-      );
+      const table = this.extractTableFromTemplate(match.template, match.score, elements, config);
       if (table) {
         tables.push(table);
       }
@@ -259,7 +253,7 @@ export class VisualSignatureDetector implements ITableDetector {
    */
   private generateBitmask(
     elements: ReadonlyArray<TextElement>,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): number[][] {
     const gw = this.config.gridWidth;
     const gh = this.config.gridHeight;
@@ -302,10 +296,7 @@ export class VisualSignatureDetector implements ITableDetector {
    * Computes match score between a generated bitmask and a template.
    * Uses normalized overlap (Jaccard-like similarity adapted for templates).
    */
-  private computeMatchScore(
-    actual: number[][],
-    template: TableTemplate
-  ): number {
+  private computeMatchScore(actual: number[][], template: TableTemplate): number {
     const gw = this.config.gridWidth;
     const gh = this.config.gridHeight;
 
@@ -336,7 +327,7 @@ export class VisualSignatureDetector implements ITableDetector {
   private resampleTemplate(
     template: TableTemplate,
     targetWidth: number,
-    targetHeight: number
+    targetHeight: number,
   ): number[][] {
     // If sizes match, return as-is
     if (template.gridWidth === targetWidth && template.gridHeight === targetHeight) {
@@ -366,7 +357,7 @@ export class VisualSignatureDetector implements ITableDetector {
     template: TableTemplate,
     matchScore: number,
     elements: ReadonlyArray<TextElement>,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): DetectedTable | null {
     const [rx1, ry1, rx2, ry2] = template.tableRegion;
 
@@ -381,7 +372,7 @@ export class VisualSignatureDetector implements ITableDetector {
         el.x + el.width / 2 >= x1 &&
         el.x + el.width / 2 <= x2 &&
         el.y + el.height / 2 >= y1 &&
-        el.y + el.height / 2 <= y2
+        el.y + el.height / 2 <= y2,
     );
 
     if (containedElements.length === 0) {
@@ -389,16 +380,8 @@ export class VisualSignatureDetector implements ITableDetector {
     }
 
     // Detect grid structure within the template region
-    const rowGroups = this.clusterByCoordinate(
-      containedElements,
-      (el) => el.y,
-      config.tolerance
-    );
-    const colGroups = this.clusterByCoordinate(
-      containedElements,
-      (el) => el.x,
-      config.tolerance
-    );
+    const rowGroups = this.clusterByCoordinate(containedElements, (el) => el.y, config.tolerance);
+    const colGroups = this.clusterByCoordinate(containedElements, (el) => el.x, config.tolerance);
 
     const rows = rowGroups.length;
     const cols = colGroups.length;
@@ -412,7 +395,7 @@ export class VisualSignatureDetector implements ITableDetector {
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const cellElements = containedElements.filter(
-          (el) => rowGroups[r].includes(el) && colGroups[c].includes(el)
+          (el) => rowGroups[r].includes(el) && colGroups[c].includes(el),
         );
 
         if (cellElements.length > 0) {
@@ -432,14 +415,10 @@ export class VisualSignatureDetector implements ITableDetector {
           });
         } else {
           // Estimate empty cell position
-          const rowYAvg =
-            rowGroups[r].reduce((s, el) => s + el.y, 0) / rowGroups[r].length;
-          const colXAvg =
-            colGroups[c].reduce((s, el) => s + el.x, 0) / colGroups[c].length;
-          const avgH =
-            rowGroups[r].reduce((s, el) => s + el.height, 0) / rowGroups[r].length;
-          const avgW =
-            colGroups[c].reduce((s, el) => s + el.width, 0) / colGroups[c].length;
+          const rowYAvg = rowGroups[r].reduce((s, el) => s + el.y, 0) / rowGroups[r].length;
+          const colXAvg = colGroups[c].reduce((s, el) => s + el.x, 0) / colGroups[c].length;
+          const avgH = rowGroups[r].reduce((s, el) => s + el.height, 0) / rowGroups[r].length;
+          const avgW = colGroups[c].reduce((s, el) => s + el.width, 0) / colGroups[c].length;
 
           cells.push({
             rowIndex: r,
@@ -454,12 +433,9 @@ export class VisualSignatureDetector implements ITableDetector {
     }
 
     // Detect header
-    const firstRowEls = containedElements.filter((el) =>
-      rowGroups[0].includes(el)
-    );
+    const firstRowEls = containedElements.filter((el) => rowGroups[0].includes(el));
     const avgFontSize =
-      containedElements.reduce((s, el) => s + el.fontSize, 0) /
-      containedElements.length;
+      containedElements.reduce((s, el) => s + el.fontSize, 0) / containedElements.length;
     const hasHeader =
       firstRowEls.length > 0 &&
       (firstRowEls.some((el) => el.isBold) ||
@@ -486,7 +462,7 @@ export class VisualSignatureDetector implements ITableDetector {
   private clusterByCoordinate(
     elements: ReadonlyArray<TextElement>,
     project: (el: TextElement) => number,
-    tolerance: number
+    tolerance: number,
   ): TextElement[][] {
     if (elements.length === 0) return [];
 
@@ -499,8 +475,7 @@ export class VisualSignatureDetector implements ITableDetector {
       const val = project(sorted[i]);
       if (Math.abs(val - currentCenter) <= tolerance) {
         currentGroup.push(sorted[i]);
-        currentCenter =
-          currentGroup.reduce((s, el) => s + project(el), 0) / currentGroup.length;
+        currentCenter = currentGroup.reduce((s, el) => s + project(el), 0) / currentGroup.length;
       } else {
         groups.push(currentGroup);
         currentGroup = [sorted[i]];

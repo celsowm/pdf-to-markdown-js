@@ -87,28 +87,31 @@ export class PdfReader {
     }
 
     const xrefContent = xrefMatch[1];
-    const subsectionPattern = /(\d+)\s+(\d+)\s*\n([\s\S]*?)(?=\d+\s+\d+|$)/g;
-    let subsectionMatch;
+    const lines = xrefContent.split(/\r?\n/).filter((line) => line.trim().length > 0);
+    let currentObjNum = 0;
+    let remainingCount = 0;
 
-    while ((subsectionMatch = subsectionPattern.exec(xrefContent)) !== null) {
-      const startObjNum = parseInt(subsectionMatch[1], 10);
-      const count = parseInt(subsectionMatch[2], 10);
-      const entriesText = subsectionMatch[3];
+    for (const line of lines) {
+      const subsectionMatch = /^(\d+)\s+(\d+)$/.exec(line.trim());
+      if (subsectionMatch) {
+        currentObjNum = parseInt(subsectionMatch[1], 10);
+        remainingCount = parseInt(subsectionMatch[2], 10);
+        continue;
+      }
 
-      const entryPattern = /(\d{10})\s+(\d{5})\s+([fn])\s*/g;
-      let entryMatch;
-      let objNum = startObjNum;
+      if (remainingCount > 0) {
+        const entryMatch = /^(\d{10})\s+(\d{5})\s+([fn])/.exec(line.trim());
+        if (entryMatch) {
+          const offset = parseInt(entryMatch[1], 10);
+          const generation = parseInt(entryMatch[2], 10);
+          const inUse = entryMatch[3] === 'n';
 
-      while ((entryMatch = entryPattern.exec(entriesText)) !== null && objNum < startObjNum + count) {
-        const offset = parseInt(entryMatch[1], 10);
-        const generation = parseInt(entryMatch[2], 10);
-        const inUse = entryMatch[3] === 'n';
-
-        if (inUse) {
-          xrefEntries.set(objNum, { offset, generation, inUse });
+          if (inUse) {
+            xrefEntries.set(currentObjNum, { offset, generation, inUse });
+          }
+          currentObjNum++;
+          remainingCount--;
         }
-
-        objNum++;
       }
     }
 
@@ -173,6 +176,12 @@ export class PdfReader {
     const entry = xrefTable.get(objNum);
 
     if (!entry) {
+      // Fallback: search for object in the entire buffer if xref lookup fails
+      const searchPattern = new RegExp(`\\b${objNum}\\s+\\d+\\s+obj([\\s\\S]*?)endobj`);
+      const searchMatch = searchPattern.exec(this.buffer);
+      if (searchMatch) {
+        return searchMatch[1];
+      }
       throw new Error(`Object ${objNum} not found in xref table`);
     }
 

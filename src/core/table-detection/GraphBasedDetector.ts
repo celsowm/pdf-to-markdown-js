@@ -16,7 +16,13 @@
  * 5. Extract table boundaries from the bounding box of each grid subgraph
  */
 
-import { ITableDetector, DetectedTable, TableCell, DetectionConfig, DetectorCategory } from './TableTypes';
+import {
+  ITableDetector,
+  DetectedTable,
+  TableCell,
+  DetectionConfig,
+  DetectorCategory,
+} from './TableTypes';
 import { TextElement } from '../../models/TextElement';
 
 interface GraphNode {
@@ -89,10 +95,7 @@ export class GraphBasedDetector implements ITableDetector {
    * Builds a directed graph from text elements.
    * Each node has at most one right neighbor and one below neighbor.
    */
-  private buildGraph(
-    elements: ReadonlyArray<TextElement>,
-    tolerance: number
-  ): GraphNode[] {
+  private buildGraph(elements: ReadonlyArray<TextElement>, tolerance: number): GraphNode[] {
     const nodes: GraphNode[] = elements.map((el, idx) => ({
       element: el,
       index: idx,
@@ -108,10 +111,8 @@ export class GraphBasedDetector implements ITableDetector {
       for (let j = 0; j < nodes.length; j++) {
         if (i === j) continue;
 
-        const sameRow =
-          Math.abs(nodes[i].element.y - nodes[j].element.y) <= tolerance;
-        const isRight =
-          nodes[j].element.x > nodes[i].element.x + nodes[i].element.width;
+        const sameRow = Math.abs(nodes[i].element.y - nodes[j].element.y) <= tolerance;
+        const isRight = nodes[j].element.x > nodes[i].element.x + nodes[i].element.width;
 
         if (sameRow && isRight) {
           const dist = nodes[j].element.x - (nodes[i].element.x + nodes[i].element.width);
@@ -133,10 +134,8 @@ export class GraphBasedDetector implements ITableDetector {
       for (let j = 0; j < nodes.length; j++) {
         if (i === j) continue;
 
-        const sameCol =
-          Math.abs(nodes[i].element.x - nodes[j].element.x) <= tolerance;
-        const isBelow =
-          nodes[j].element.y > nodes[i].element.y + nodes[i].element.height;
+        const sameCol = Math.abs(nodes[i].element.x - nodes[j].element.x) <= tolerance;
+        const isBelow = nodes[j].element.y > nodes[i].element.y + nodes[i].element.height;
 
         if (sameCol && isBelow) {
           const dist = nodes[j].element.y - (nodes[i].element.y + nodes[i].element.height);
@@ -160,7 +159,7 @@ export class GraphBasedDetector implements ITableDetector {
    */
   private findGridClusters(
     nodes: ReadonlyArray<GraphNode>,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): GridCluster[] {
     const visited = new Set<number>();
     const clusters: GridCluster[] = [];
@@ -192,7 +191,7 @@ export class GraphBasedDetector implements ITableDetector {
     seedIdx: number,
     nodes: ReadonlyArray<GraphNode>,
     visited: Set<number>,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): GridCluster | null {
     // Trace the first row by following right neighbors
     const firstRow: number[] = [];
@@ -265,7 +264,7 @@ export class GraphBasedDetector implements ITableDetector {
   private buildTableFromCluster(
     cluster: GridCluster,
     nodes: ReadonlyArray<GraphNode>,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): DetectedTable | null {
     const clusterElements = cluster.nodes.map((idx) => nodes[idx].element);
 
@@ -279,16 +278,8 @@ export class GraphBasedDetector implements ITableDetector {
 
     // Build cells by estimating grid positions
     // Group elements by Y (rows) and X (columns)
-    const rowGroups = this.clusterByCoordinate(
-      clusterElements,
-      'y',
-      config.tolerance
-    );
-    const colGroups = this.clusterByCoordinate(
-      clusterElements,
-      'x',
-      config.tolerance
-    );
+    const rowGroups = this.clusterByCoordinate(clusterElements, 'y', config.tolerance);
+    const colGroups = this.clusterByCoordinate(clusterElements, 'x', config.tolerance);
 
     const rows = rowGroups.length;
     const cols = colGroups.length;
@@ -303,8 +294,7 @@ export class GraphBasedDetector implements ITableDetector {
       for (let c = 0; c < cols; c++) {
         // Find elements in this cell
         const cellElements = clusterElements.filter(
-          (el) =>
-            rowGroups[r].includes(el) && colGroups[c].includes(el)
+          (el) => rowGroups[r].includes(el) && colGroups[c].includes(el),
         );
 
         if (cellElements.length > 0) {
@@ -326,12 +316,8 @@ export class GraphBasedDetector implements ITableDetector {
           // Empty cell: estimate position from grid
           const rowY = Math.min(...rowGroups[r].map((el) => el.y));
           const colX = Math.min(...colGroups[c].map((el) => el.x));
-          const rowH =
-            rowGroups[r].reduce((s, el) => s + el.height, 0) /
-            rowGroups[r].length;
-          const colW =
-            colGroups[c].reduce((s, el) => s + el.width, 0) /
-            colGroups[c].length;
+          const rowH = rowGroups[r].reduce((s, el) => s + el.height, 0) / rowGroups[r].length;
+          const colW = colGroups[c].reduce((s, el) => s + el.width, 0) / colGroups[c].length;
 
           cells.push({
             rowIndex: r,
@@ -346,12 +332,9 @@ export class GraphBasedDetector implements ITableDetector {
     }
 
     // Detect header: first row elements are typically bold or larger
-    const firstRowElements = clusterElements.filter((el) =>
-      rowGroups[0].includes(el)
-    );
+    const firstRowElements = clusterElements.filter((el) => rowGroups[0].includes(el));
     const avgFontSize =
-      clusterElements.reduce((s, el) => s + el.fontSize, 0) /
-      clusterElements.length;
+      clusterElements.reduce((s, el) => s + el.fontSize, 0) / clusterElements.length;
     const hasHeader =
       firstRowElements.length > 0 &&
       firstRowElements.some((el) => el.isBold || el.fontSize > avgFontSize);
@@ -377,7 +360,7 @@ export class GraphBasedDetector implements ITableDetector {
   private clusterByCoordinate(
     elements: ReadonlyArray<TextElement>,
     coord: 'x' | 'y',
-    tolerance: number
+    tolerance: number,
   ): TextElement[][] {
     const sorted = [...elements].sort((a, b) => {
       const valA = coord === 'x' ? a[coord] : a[coord];

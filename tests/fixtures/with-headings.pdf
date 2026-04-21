@@ -37,7 +37,7 @@ endobj
 endobj
 7 0 obj
 <<
-/Author (\(anonymous\)) /CreationDate (D:20260408181038-03'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260408181038-03'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+/Author (\(anonymous\)) /CreationDate (D:20260421201015+00'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260421201015+00'00') /Producer (ReportLab PDF Library - \(opensource\))
   /Subject (\(unspecified\)) /Title (\(anonymous\)) /Trapped /False
 >>
 endobj
@@ -48,10 +48,79 @@ endobj
 endobj
 9 0 obj
 <<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 452
+/Length 1042
 >>
 stream
-Gat$ta_l_b&A@ZMF)3@lg+7e[]0r[K*3/c=#RnOL@T2#$g99sQP#Q90$8Oq]2"NU9*#K^ahrOms;8C),"-5^s^lpGQnHLWjp^Hr&1Ws43N2W.Zbh(&kTJ:mb\u4Kh_*eh\4\QR_+?/UQ.X9NUG<k7T8@QWD&0E%_H@g?%In:EhU5Nd1VPr1)RHNElm[7/)=9fcrS^_D;PJnc:l&nh^*o0_-b]=8373aD2iu3SK/(].9</&=nC9P\gMF)Qamm_Nu$FU3T3iZZnKnTT^_A#(1ZqWM+4O'1%_UJ:;Y[Y3,iO6Gh9t*:N!Zpo(dV+l0BCjSu\k'o6AV;3&`2Ed>r2+jP?)'\cU-5@(i4ek_Pa3Tq=V7%&^BPrr]$b^*V\<V*Lm]M]kH>gVRT@rrqj&N'(hpXMTAWnBhaO:^br[##S?B3L'J3K9eIL<Y[+_8QT*YWb8cAg.~>endstream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+q
+1 0 0 1 78 692 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 -2 Tm /F2 24 Tf 22 TL (Main Document Title) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 660 cm
+Q
+q
+1 0 0 1 78 630 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 0 Tm /F2 18 Tf 18 TL (First Section) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 603 cm
+Q
+q
+1 0 0 1 78 591 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (This is the content under the first section. It should be detected as a paragraph.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 579 cm
+Q
+q
+1 0 0 1 78 553 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 0 Tm /F3 14 Tf 14 TL (Subsection 1.1) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 529 cm
+Q
+q
+1 0 0 1 78 517 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (Content under the subsection. The font size differences should help the parser identify the structure.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 505 cm
+Q
+q
+1 0 0 1 78 475 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 0 Tm /F2 18 Tf 18 TL (Second Section) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 448 cm
+Q
+q
+1 0 0 1 78 436 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (More content in the second section for testing purposes.) Tj T* ET
+Q
+Q
+
+endstream
 endobj
 xref
 0 10
@@ -68,7 +137,7 @@ xref
 trailer
 <<
 /ID 
-[<6aacae2f6120283e6332fd925fc2c32a><6aacae2f6120283e6332fd925fc2c32a>]
+[<fc3d47614ac2b6bd0225403ba8acbd77><fc3d47614ac2b6bd0225403ba8acbd77>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 7 0 R
@@ -76,5 +145,5 @@ trailer
 /Size 10
 >>
 startxref
-1592
+2143
 %%EOF

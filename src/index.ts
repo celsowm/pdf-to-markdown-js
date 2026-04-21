@@ -26,6 +26,27 @@ export interface PdfToMarkdownOptions {
  */
 export class PdfToMarkdown {
   /**
+   * Converts a PDF file to Markdown string.
+   * Note: This method only works in a Node.js environment.
+   * @param filePath Path to the PDF file
+   * @param options Conversion options
+   * @returns Promise resolving to Markdown string
+   */
+  static async fromFile(filePath: string, options?: PdfToMarkdownOptions): Promise<string> {
+    try {
+      // Use dynamic import to prevent bundlers from complaining about 'fs' when targeting browser
+      const fsModule = await eval("import('fs')");
+      const buffer = fsModule.readFileSync(filePath);
+      return this.fromBuffer(buffer, options);
+    } catch (e) {
+      // Fallback for CommonJS environments
+      const fsModule = eval("require('fs')");
+      const buffer = fsModule.readFileSync(filePath);
+      return this.fromBuffer(buffer, options);
+    }
+  }
+
+  /**
    * Converts a PDF buffer to Markdown string.
    * @param buffer PDF file buffer
    * @param options Conversion options
@@ -55,14 +76,14 @@ export class PdfToMarkdown {
    */
   static async fromUrl(url: string, options?: PdfToMarkdownOptions): Promise<string> {
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch PDF from URL: ${response.status} ${response.statusText}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
+
     return this.fromBuffer(buffer, options);
   }
 

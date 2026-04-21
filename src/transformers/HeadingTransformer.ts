@@ -28,9 +28,7 @@ export class HeadingTransformer implements MarkdownTransformer {
     }
 
     // Check if any element has a font size that qualifies as a heading
-    return elements.some(
-      (el) => el.fontSize >= HEADING_THRESHOLDS.h6 || el.isBold
-    );
+    return elements.some((el) => el.fontSize >= HEADING_THRESHOLDS.h6 || el.isBold);
   }
 
   transform(elements: TextElement[], allElements: TextElement[]): MarkdownNode[] {
@@ -53,7 +51,7 @@ export class HeadingTransformer implements MarkdownTransformer {
    */
   private detectHeadingLevel(
     element: TextElement,
-    medianFontSize: number
+    medianFontSize: number,
   ): 1 | 2 | 3 | 4 | 5 | 6 | null {
     const { fontSize, isBold } = element;
 

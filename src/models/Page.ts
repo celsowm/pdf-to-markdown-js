@@ -17,7 +17,7 @@ export function createPage(
   index: number,
   width: number,
   height: number,
-  textElements: ReadonlyArray<TextElement>
+  textElements: ReadonlyArray<TextElement>,
 ): Page {
   return {
     index,

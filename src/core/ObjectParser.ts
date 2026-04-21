@@ -218,11 +218,45 @@ export class ObjectParser {
         };
       }
 
-      streamContent += String(token.value);
+      // Add spaces back for non-string tokens to maintain structure, mostly for content streams
+      if (
+        streamContent.length > 0 &&
+        token.type !== TokenType.STRING &&
+        token.type !== TokenType.ARRAY_END &&
+        token.type !== TokenType.ARRAY_START
+      ) {
+        streamContent += ' ';
+      }
+
+      if (token.type === TokenType.NAME) {
+        streamContent += '/' + String(token.value);
+      } else if (token.type === TokenType.STRING) {
+        const val = String(token.value)
+          .replace(/\\/g, '\\\\')
+          .replace(/\(/g, '\\(')
+          .replace(/\)/g, '\\)');
+        streamContent += '(' + val + ')';
+      } else if (token.type === TokenType.ARRAY_START) {
+        streamContent += '[';
+      } else if (token.type === TokenType.ARRAY_END) {
+        streamContent += ']';
+      } else if (token.type === TokenType.HEX_STRING) {
+        streamContent += '<' + String(token.value) + '>';
+      } else {
+        streamContent += String(token.value);
+      }
       this.position++;
     }
 
-    throw new Error('Unterminated stream');
+    // In many cases endstream is omitted or part of the last token. Just return what we have.
+    if (streamContent.endsWith('endstream')) {
+      streamContent = streamContent.substring(0, streamContent.length - 9).trim();
+    }
+    return {
+      type: 'stream',
+      dictionary: dict,
+      content: streamContent,
+    };
   }
 
   /**
