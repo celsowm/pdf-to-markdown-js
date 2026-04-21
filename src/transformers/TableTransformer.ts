@@ -1,9 +1,9 @@
 /**
  * Table Transformer
- * 
+ *
  * Orchestrates table detection using multiple detector techniques.
  * Users can configure weights to favor specific detection methods.
- * 
+ *
  * SOLID:
  * - OCP: New detectors can be added via registry
  * - DIP: Depends on ITableDetector abstraction
@@ -49,7 +49,7 @@ export interface TableTransformerConfig {
 
 /**
  * Transformer that detects and converts tables to Markdown.
- * 
+ *
  * Uses a registry of detection techniques:
  * - **Lattice**: Vector-based line detection (bordered tables)
  * - **Stream**: Whitespace projection profiles (borderless tables)
@@ -83,10 +83,7 @@ export class TableTransformer implements MarkdownTransformer {
     return elements.length >= 4;
   }
 
-  transform(
-    elements: TextElement[],
-    _allElements: TextElement[]
-  ): MarkdownNode[] {
+  transform(elements: TextElement[], _allElements: TextElement[]): MarkdownNode[] {
     const config: DetectionConfig = {
       ...DEFAULT_DETECTION_CONFIG,
       tolerance: this.config.tolerance ?? DEFAULT_DETECTION_CONFIG.tolerance,
@@ -115,7 +112,7 @@ export class TableTransformer implements MarkdownTransformer {
    */
   private convertTablesToMarkdown(
     tables: DetectedTable[],
-    elements: ReadonlyArray<TextElement>
+    elements: ReadonlyArray<TextElement>,
   ): MarkdownNode[] {
     const nodes: MarkdownNode[] = [];
 
@@ -134,7 +131,7 @@ export class TableTransformer implements MarkdownTransformer {
    */
   private buildMarkdownTable(
     table: DetectedTable,
-    elements: ReadonlyArray<TextElement>
+    elements: ReadonlyArray<TextElement>,
   ): MarkdownNode | null {
     // Extract text content for each cell
     const headers: string[] = [];
@@ -173,7 +170,7 @@ export class TableTransformer implements MarkdownTransformer {
    */
   private assignElementsToCells(
     table: DetectedTable,
-    elements: ReadonlyArray<TextElement>
+    elements: ReadonlyArray<TextElement>,
   ): Map<string, string> {
     const cellContent = new Map<string, string>();
 
@@ -195,7 +192,7 @@ export class TableTransformer implements MarkdownTransformer {
    */
   private findElementCell(
     element: TextElement,
-    table: DetectedTable
+    table: DetectedTable,
   ): { rowIndex: number; colIndex: number } | null {
     const centerX = element.x + element.width / 2;
     const centerY = element.y - element.height / 2;

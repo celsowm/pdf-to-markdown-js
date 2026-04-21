@@ -16,7 +16,13 @@
  * 6. Extract grid structure within detected regions
  */
 
-import { ITableDetector, DetectedTable, TableCell, DetectionConfig, DetectorCategory } from './TableTypes';
+import {
+  ITableDetector,
+  DetectedTable,
+  TableCell,
+  DetectionConfig,
+  DetectorCategory,
+} from './TableTypes';
 import { TextElement } from '../../models/TextElement';
 
 interface EntropyRegion {
@@ -51,11 +57,7 @@ export class EntropyDetector implements ITableDetector {
     const entropyProfile = this.computeEntropyProfile(signal, config);
 
     // Step 3: Find high-entropy regions
-    const highEntropyRegions = this.findHighEntropyRegions(
-      entropyProfile,
-      elements,
-      config
-    );
+    const highEntropyRegions = this.findHighEntropyRegions(entropyProfile, elements, config);
 
     if (highEntropyRegions.length === 0) {
       return [];
@@ -88,11 +90,10 @@ export class EntropyDetector implements ITableDetector {
    */
   private buildBinarySignal(
     elements: ReadonlyArray<TextElement>,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): { signal: number[]; lineHeight: number; totalLines: number } {
     // Determine scanline height based on average text height
-    const avgHeight =
-      elements.reduce((sum, el) => sum + el.height, 0) / elements.length;
+    const avgHeight = elements.reduce((sum, el) => sum + el.height, 0) / elements.length;
     const lineHeight = Math.max(avgHeight * 0.5, config.tolerance);
     const totalLines = Math.ceil(config.pageHeight / lineHeight);
 
@@ -119,13 +120,10 @@ export class EntropyDetector implements ITableDetector {
    */
   private computeEntropyProfile(
     signal: number[],
-    config: DetectionConfig
+    config: DetectionConfig,
   ): { entropies: number[]; windowSize: number } {
     // Window size: enough to capture several row cycles of a table
-    const windowSize = Math.max(
-      Math.ceil(config.pageHeight / (config.tolerance * 10)),
-      5
-    );
+    const windowSize = Math.max(Math.ceil(config.pageHeight / (config.tolerance * 10)), 5);
 
     const entropies: number[] = [];
 
@@ -171,18 +169,16 @@ export class EntropyDetector implements ITableDetector {
   private findHighEntropyRegions(
     entropyProfile: { entropies: number[]; windowSize: number },
     elements: ReadonlyArray<TextElement>,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): EntropyRegion[] {
     const { entropies, windowSize } = entropyProfile;
 
     if (entropies.length === 0) return [];
 
     // Compute entropy threshold: regions above the mean + std deviation
-    const meanEntropy =
-      entropies.reduce((sum, e) => sum + e, 0) / entropies.length;
+    const meanEntropy = entropies.reduce((sum, e) => sum + e, 0) / entropies.length;
     const variance =
-      entropies.reduce((sum, e) => sum + (e - meanEntropy) ** 2, 0) /
-      entropies.length;
+      entropies.reduce((sum, e) => sum + (e - meanEntropy) ** 2, 0) / entropies.length;
     const stdDev = Math.sqrt(variance);
     const threshold = meanEntropy + stdDev * 0.3;
 
@@ -231,9 +227,7 @@ export class EntropyDetector implements ITableDetector {
         : config.tolerance;
     const minLines = config.minRows;
 
-    const validSegments = segments.filter(
-      (seg) => seg.end - seg.start >= minLines
-    );
+    const validSegments = segments.filter((seg) => seg.end - seg.start >= minLines);
 
     if (validSegments.length === 0) return [];
 
@@ -247,10 +241,7 @@ export class EntropyDetector implements ITableDetector {
       const yEnd = seg.end * lineHeight;
 
       // Find elements within this Y range
-      const regionElements = elements.filter(
-        (el) =>
-          el.y + el.height >= yStart && el.y <= yEnd
-      );
+      const regionElements = elements.filter((el) => el.y + el.height >= yStart && el.y <= yEnd);
 
       if (regionElements.length >= config.minRows * config.minCols) {
         regions.push({
@@ -270,7 +261,7 @@ export class EntropyDetector implements ITableDetector {
    */
   private mergeAdjacentSegments(
     segments: { start: number; end: number; avgEntropy: number }[],
-    windowSize: number
+    windowSize: number,
   ): { start: number; end: number; avgEntropy: number }[] {
     if (segments.length === 0) return [];
 
@@ -297,7 +288,7 @@ export class EntropyDetector implements ITableDetector {
    */
   private buildTableFromRegion(
     region: EntropyRegion,
-    config: DetectionConfig
+    config: DetectionConfig,
   ): DetectedTable | null {
     const elements = region.elements;
 
@@ -312,16 +303,8 @@ export class EntropyDetector implements ITableDetector {
     const y2 = region.yEnd;
 
     // Detect row and column structure
-    const rowGroups = this.clusterByCoordinate(
-      elements,
-      (el) => el.y,
-      config.tolerance
-    );
-    const colGroups = this.clusterByCoordinate(
-      elements,
-      (el) => el.x,
-      config.tolerance
-    );
+    const rowGroups = this.clusterByCoordinate(elements, (el) => el.y, config.tolerance);
+    const colGroups = this.clusterByCoordinate(elements, (el) => el.x, config.tolerance);
 
     const rows = rowGroups.length;
     const cols = colGroups.length;
@@ -335,7 +318,7 @@ export class EntropyDetector implements ITableDetector {
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const cellElements = elements.filter(
-          (el) => rowGroups[r].includes(el) && colGroups[c].includes(el)
+          (el) => rowGroups[r].includes(el) && colGroups[c].includes(el),
         );
 
         if (cellElements.length > 0) {
@@ -355,14 +338,10 @@ export class EntropyDetector implements ITableDetector {
           });
         } else {
           // Empty cell: estimate position
-          const rowYAvg =
-            rowGroups[r].reduce((s, el) => s + el.y, 0) / rowGroups[r].length;
-          const colXAvg =
-            colGroups[c].reduce((s, el) => s + el.x, 0) / colGroups[c].length;
-          const avgH =
-            rowGroups[r].reduce((s, el) => s + el.height, 0) / rowGroups[r].length;
-          const avgW =
-            colGroups[c].reduce((s, el) => s + el.width, 0) / colGroups[c].length;
+          const rowYAvg = rowGroups[r].reduce((s, el) => s + el.y, 0) / rowGroups[r].length;
+          const colXAvg = colGroups[c].reduce((s, el) => s + el.x, 0) / colGroups[c].length;
+          const avgH = rowGroups[r].reduce((s, el) => s + el.height, 0) / rowGroups[r].length;
+          const avgW = colGroups[c].reduce((s, el) => s + el.width, 0) / colGroups[c].length;
 
           cells.push({
             rowIndex: r,
@@ -378,8 +357,7 @@ export class EntropyDetector implements ITableDetector {
 
     // Detect header
     const firstRowEls = elements.filter((el) => rowGroups[0].includes(el));
-    const avgFontSize =
-      elements.reduce((s, el) => s + el.fontSize, 0) / elements.length;
+    const avgFontSize = elements.reduce((s, el) => s + el.fontSize, 0) / elements.length;
     const hasHeader =
       firstRowEls.length > 0 &&
       (firstRowEls.some((el) => el.isBold) ||
@@ -406,7 +384,7 @@ export class EntropyDetector implements ITableDetector {
   private clusterByCoordinate(
     elements: ReadonlyArray<TextElement>,
     project: (el: TextElement) => number,
-    tolerance: number
+    tolerance: number,
   ): TextElement[][] {
     if (elements.length === 0) return [];
 
@@ -419,8 +397,7 @@ export class EntropyDetector implements ITableDetector {
       const val = project(sorted[i]);
       if (Math.abs(val - currentCenter) <= tolerance) {
         currentGroup.push(sorted[i]);
-        currentCenter =
-          currentGroup.reduce((s, el) => s + project(el), 0) / currentGroup.length;
+        currentCenter = currentGroup.reduce((s, el) => s + project(el), 0) / currentGroup.length;
       } else {
         groups.push(currentGroup);
         currentGroup = [sorted[i]];

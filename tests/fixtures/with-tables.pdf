@@ -32,7 +32,7 @@ endobj
 endobj
 6 0 obj
 <<
-/Author (\(anonymous\)) /CreationDate (D:20260408181038-03'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260408181038-03'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+/Author (\(anonymous\)) /CreationDate (D:20260421201015+00'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260421201015+00'00') /Producer (ReportLab PDF Library - \(opensource\))
   /Subject (\(unspecified\)) /Title (\(anonymous\)) /Trapped /False
 >>
 endobj
@@ -43,10 +43,119 @@ endobj
 endobj
 8 0 obj
 <<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 760
+/Length 2051
 >>
 stream
-Gat$t9i'M/&A@7.b^fjb@_89+DJu@cOXc"i=K6[(M+J+qg_r[[s*\NEm)4`t5ZX&iS%&!$f(0_TI$jf&(B@MCI/^s4ECc[O8Ko=gJa^_Amt:jVX<B>=abWfL<Qb[i@r3MS;d^=M9\V%egD]8(EkX-29b"_I?9s`<Y-Z_UO?>mN@0L9<F@BYQ7?14oh^:#3!8:"/jMda6#1KqS^$q@c@DS"Y\R^@C:l9O<U*qf0KB$<TB7gGr]g+pn>k/`3%%](4mCN:ql]6he4W$L!]War]6-aDt,!0K2J0bY]ieI/L3P[D?`*,%*DgD<MJCeXpNO6W#O*RRE4s/-LJgdH6U7hH99o4`GdVZFFhduK/:M$%5$!]IT<V\U()e`Ica==JCh3=Bt\`kJ2T_r)tdV>>6O6W-B5giK'A`2@?<IVIEG-cYWk;g2.qeQ,9CNcT]gOnH'*ZRdVOEN=h-T1.[dn7%sL(,W,(<*LDd4u/gTgtr`b@XEEW%B#_q_i<.7j0TK23efOa3BL1O1Y4j.MpibrV@!S9,!q"=\'1aRW9.E*5u(g['5iN<<e9D=?3hLkT[N)ofameq$*2-q"O5]*`tF=8FMt!"uD"T[c2+mDX+Bs42SgB^[f?!)q>D91H&WCY8UN%%^;\I>M&+DJq8/)A5t9"=DC[Y)f&WCX*jo0%GcZO=t_k8k;g12hhXpF/W-bL(j90L^gi_>UaFo=g:Pk.-SBQ*M+\lC\l<B*X=`h7[^6Wi6C[IA89gK<j?FmV\(:~>endstream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+q
+1 0 0 1 78 692 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 18 Tf 22 TL (Document with Tables) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 674 cm
+Q
+q
+1 0 0 1 78 644 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 14 Tf 18 TL (Simple Data Table:) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 632 cm
+Q
+q
+1 0 0 1 241.05 551 cm
+q
+.501961 .501961 .501961 rg
+n 0 81 129.9 -27 re f*
+0 0 0 rg
+BT /F2 10 Tf 12 TL ET
+BT 1 0 0 1 8.22 68 Tm (Name) Tj T* ET
+BT 1 0 0 1 49.67 68 Tm (Age) Tj T* ET
+BT 1 0 0 1 92.785 68 Tm (City) Tj T* ET
+0 0 0 rg
+BT /F1 10 Tf 12 TL ET
+BT 1 0 0 1 11 41 Tm (Alice) Tj T* ET
+BT 1 0 0 1 53.555 41 Tm (30) Tj T* ET
+BT 1 0 0 1 80.56 41 Tm (New York) Tj T* ET
+BT 1 0 0 1 12.94 23 Tm (Bob) Tj T* ET
+BT 1 0 0 1 53.555 23 Tm (25) Tj T* ET
+BT 1 0 0 1 85.55 23 Tm (London) Tj T* ET
+BT 1 0 0 1 6 5 Tm (Charlie) Tj T* ET
+BT 1 0 0 1 53.555 5 Tm (35) Tj T* ET
+BT 1 0 0 1 90.84 5 Tm (Paris) Tj T* ET
+q
+1 J
+1 j
+0 0 0 RG
+1 w
+n 0 81 m 129.9 81 l S
+n 0 0 m 129.9 0 l S
+n 0 0 m 0 81 l S
+n 129.9 0 m 129.9 81 l S
+n 0 54 m 129.9 54 l S
+n 0 36 m 129.9 36 l S
+n 0 18 m 129.9 18 l S
+n 43.67 0 m 43.67 81 l S
+n 74.56 0 m 74.56 81 l S
+Q
+Q
+Q
+q
+1 0 0 1 78 539 cm
+Q
+q
+1 0 0 1 78 509 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 14 Tf 18 TL (Products Table:) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 497 cm
+Q
+q
+1 0 0 1 234.65 425 cm
+q
+.678431 .847059 .901961 rg
+n 0 72 142.7 -18 re f*
+0 0 0 rg
+BT /F1 10 Tf 12 TL ET
+BT 1 0 0 1 6 59 Tm (Product) Tj T* ET
+BT 1 0 0 1 64.68 59 Tm (Price) Tj T* ET
+BT 1 0 0 1 99.46 59 Tm (Quantity) Tj T* ET
+BT 1 0 0 1 6 41 Tm (Widget) Tj T* ET
+BT 1 0 0 1 64.68 41 Tm ($10) Tj T* ET
+BT 1 0 0 1 99.46 41 Tm (100) Tj T* ET
+BT 1 0 0 1 6 23 Tm (Gadget) Tj T* ET
+BT 1 0 0 1 64.68 23 Tm ($25) Tj T* ET
+BT 1 0 0 1 99.46 23 Tm (50) Tj T* ET
+BT 1 0 0 1 6 5 Tm (Doohickey) Tj T* ET
+BT 1 0 0 1 64.68 5 Tm ($5) Tj T* ET
+BT 1 0 0 1 99.46 5 Tm (200) Tj T* ET
+q
+1 J
+1 j
+0 0 0 RG
+1 w
+n 0 72 m 142.7 72 l S
+n 0 0 m 142.7 0 l S
+n 0 0 m 0 72 l S
+n 142.7 0 m 142.7 72 l S
+n 0 54 m 142.7 54 l S
+n 0 36 m 142.7 36 l S
+n 0 18 m 142.7 18 l S
+n 58.68 0 m 58.68 72 l S
+n 93.46 0 m 93.46 72 l S
+Q
+Q
+Q
+
+endstream
 endobj
 xref
 0 9
@@ -62,7 +171,7 @@ xref
 trailer
 <<
 /ID 
-[<096d9b88592315c961e65f0c21824b21><096d9b88592315c961e65f0c21824b21>]
+[<b89483c417c27ee09530701aa24824fc><b89483c417c27ee09530701aa24824fc>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 6 0 R
@@ -70,5 +179,5 @@ trailer
 /Size 9
 >>
 startxref
-1771
+3023
 %%EOF

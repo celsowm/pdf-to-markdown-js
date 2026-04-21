@@ -42,7 +42,7 @@ endobj
 endobj
 8 0 obj
 <<
-/Author (\(anonymous\)) /CreationDate (D:20260408181038-03'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260408181038-03'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+/Author (\(anonymous\)) /CreationDate (D:20260421201015+00'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260421201015+00'00') /Producer (ReportLab PDF Library - \(opensource\))
   /Subject (\(unspecified\)) /Title (\(anonymous\)) /Trapped /False
 >>
 endobj
@@ -53,10 +53,168 @@ endobj
 endobj
 10 0 obj
 <<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 815
+/Length 2614
 >>
 stream
-Gatn%gN&c;&;KZP'RNE>e3sTrc=LUN:1i4<2S=QL.u&e2,NR@giRo^fMjRUD*2eG0@mF^WpA9'c#U4C6o=_(&XtocqK)f?$*WXS:L$T%LB9T5"g97$CONat5XKG"SRTN;6@qaLd4]A=c0VDD6K!F/W\?3rKk&Ae*MFgt#/%FHAC0gE($Y4`0$[%hDl55;F;'"rp<D$%#5g=)?7_i#&/g97Z3<[(g7OHb&)+T,9;*_2b,4hBQH]\eR[6]o9718Bj_AQWk6#a"B8Yp*M_`ergbaF,BD`2@H4bk>MHm/<+l4o8JWJ\?iU*3N"nXc!Xb\L>e%YgE52.B_%['CHArQKrufg$BT9KXqs^NCB>--#Pt+Yc`dO41b,X=P,/i#1"n'q6J@k".,4U=]%pLrRB$/sMqmPe9e60D>pQ"&cnP-uheRZfK@,e7*a2?C3QhH(DtMdkL$b3;XC1_pki9BS?60l;m%A&Z*be&T8'3;ksn\0*NfrQ`BD;qLr<Y7jFoio0ZQ&;A>2iX3=#==llLf]t?o$E\^3U:B(3?;?K56A-R,oK7Xl8;pq;&E-FLrTJ^blg7^^N<I&!OY-[Qb3c@V^ls`WW)>=)5D#*X04Sn[6m.FoElV0PTM5H-SB<2=6r;:p\kN0oNaBf\)`>e47Gb);3+f@JmU/lLu[&i8kAqI,f>N]<2fK!:-3TK4=;^i+@][<5O"_2IVUO>-!qEn\4lT[#'+o<-cd^'_6RYu2FR$<l4c;)Q*)mXsl>.IR1:`ENm.KiiegU@I`e#%A%V4%MRV4-*V>8U[3fTQVg'O<XIQfAF'aZiE$Il@~>endstream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+q
+1 0 0 1 78 692 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 18 Tf 22 TL (Inline Formatting Examples) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 674 cm
+Q
+q
+1 0 0 1 78 644 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 14 Tf 18 TL (Bold Text Examples:) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 632 cm
+Q
+q
+1 0 0 1 78 620 cm
+q
+BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (This is ) Tj /F2 10 Tf (bold text) Tj /F1 10 Tf ( that should be detected.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 614 cm
+Q
+q
+1 0 0 1 78 602 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 0 Tm /F2 12 Tf 12 TL (This entire line is bold and should convert to **markdown**.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 590 cm
+Q
+q
+1 0 0 1 78 560 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 14 Tf 18 TL (Italic Text Examples:) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 548 cm
+Q
+q
+1 0 0 1 78 536 cm
+q
+BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (This is ) Tj /F3 10 Tf (italic text) Tj /F1 10 Tf ( that should be detected.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 530 cm
+Q
+q
+1 0 0 1 78 518 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 0 Tm /F3 12 Tf 12 TL (This entire line is italic and should convert to *markdown*.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 506 cm
+Q
+q
+1 0 0 1 78 476 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 14 Tf 18 TL (Bold and Italic:) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 464 cm
+Q
+q
+1 0 0 1 78 452 cm
+q
+BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (This is ) Tj /F4 10 Tf (bold italic) Tj /F1 10 Tf ( text for testing.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 446 cm
+Q
+q
+1 0 0 1 78 434 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 0 Tm /F4 12 Tf 12 TL (This line is both bold and italic.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 422 cm
+Q
+q
+1 0 0 1 78 392 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 14 Tf 18 TL (Strike-through Text:) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 380 cm
+Q
+q
+1 0 0 1 78 368 cm
+q
+0 0 0 RG
+n 31.67 4.5 m 108.37 4.5 l S
+BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (This is ) Tj (strikethrough text) Tj ( that should convert to ~~markdown~~.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 356 cm
+Q
+q
+1 0 0 1 78 326 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 14 Tf 18 TL (Mixed Formatting:) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 314 cm
+Q
+q
+1 0 0 1 78 302 cm
+q
+0 0 0 RG
+n 130.6 4.5 m 154.49 4.5 l S
+BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (This line has ) Tj /F2 10 Tf (bold) Tj /F1 10 Tf (, ) Tj /F3 10 Tf (italic) Tj /F1 10 Tf (, and ) Tj (strike) Tj ( in the same paragraph.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 290 cm
+Q
+q
+1 0 0 1 78 260 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 14 Tf 18 TL (Summary) Tj T* ET
+Q
+Q
+q
+1 0 0 1 78 248 cm
+Q
+q
+1 0 0 1 78 224 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL (The converter should detect and properly convert all these formatting styles to their markdown) Tj T* (equivalents: **bold**, *italic*, and ~~strikethrough~~.) Tj T* ET
+Q
+Q
+
+endstream
 endobj
 xref
 0 11
@@ -74,7 +232,7 @@ xref
 trailer
 <<
 /ID 
-[<509ef724ea5bd0e54ced8e4d5d7ec348><509ef724ea5bd0e54ced8e4d5d7ec348>]
+[<cd4805f31c1ee13951f7830242292f99><cd4805f31c1ee13951f7830242292f99>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 8 0 R
@@ -82,5 +240,5 @@ trailer
 /Size 11
 >>
 startxref
-2082
+3842
 %%EOF

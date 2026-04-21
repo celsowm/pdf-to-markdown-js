@@ -72,15 +72,15 @@ export const DEFAULT_DETECTION_CONFIG: DetectionConfig = {
  * Detector category for classification.
  */
 export type DetectorCategory =
-  | 'vector'        // Lattice
-  | 'whitespace'    // Stream
-  | 'structural'    // R-XY-Cut
-  | 'landmark'      // Anchor Zoning
-  | 'statistical'   // SCA
-  | 'relational'    // Graph-Based
-  | 'shape'         // Morphology
-  | 'template'      // Visual Signature
-  | 'signal';       // Entropy
+  | 'vector' // Lattice
+  | 'whitespace' // Stream
+  | 'structural' // R-XY-Cut
+  | 'landmark' // Anchor Zoning
+  | 'statistical' // SCA
+  | 'relational' // Graph-Based
+  | 'shape' // Morphology
+  | 'template' // Visual Signature
+  | 'signal'; // Entropy
 
 /**
  * Interface for table detectors (DIP + ISP).

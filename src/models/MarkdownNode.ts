@@ -118,7 +118,7 @@ export function createParagraphNode(children: MarkdownNode[]): ParagraphNode {
  */
 export function createTextNode(
   content: string,
-  formatting: InlineFormatting = DEFAULT_FORMATTING
+  formatting: InlineFormatting = DEFAULT_FORMATTING,
 ): MarkdownNode {
   return {
     type: 'text',

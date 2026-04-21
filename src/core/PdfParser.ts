@@ -98,10 +98,7 @@ export class PdfParser {
   /**
    * Extracts page information from the PDF.
    */
-  private extractPages(
-    xrefTable: Map<number, XRefEntry>,
-    trailer: { root?: number }
-  ): Page[] {
+  private extractPages(xrefTable: Map<number, XRefEntry>, trailer: { root?: number }): Page[] {
     const pages: Page[] = [];
 
     try {
@@ -120,10 +117,7 @@ export class PdfParser {
         return pages;
       }
 
-      const pagesContent = this.pdfReader.extractObjectContent(
-        pagesObj.objNum,
-        xrefTable
-      );
+      const pagesContent = this.pdfReader.extractObjectContent(pagesObj.objNum, xrefTable);
       const pagesDict = ObjectParser.parseContent(pagesContent);
 
       // Get kids (individual pages)
@@ -137,11 +131,7 @@ export class PdfParser {
 
       for (const kid of kidsArray) {
         if (isReference(kid)) {
-          const page = this.extractPage(
-            kid.objNum,
-            xrefTable,
-            pageIndex++
-          );
+          const page = this.extractPage(kid.objNum, xrefTable, pageIndex++);
           if (page) {
             pages.push(page);
           }
@@ -160,7 +150,7 @@ export class PdfParser {
   private extractPage(
     objNum: number,
     xrefTable: Map<number, XRefEntry>,
-    pageIndex: number
+    pageIndex: number,
   ): Page | null {
     try {
       const pageContent = this.pdfReader.extractObjectContent(objNum, xrefTable);
@@ -181,7 +171,13 @@ export class PdfParser {
 
       // Extract content stream
       const contents = this.getDictionaryEntry(pageDict, '/Contents');
-      const textElements = this.extractTextFromContents(contents, xrefTable, width, height, pageIndex);
+      const textElements = this.extractTextFromContents(
+        contents,
+        xrefTable,
+        width,
+        height,
+        pageIndex,
+      );
 
       return createPage(pageIndex, width, height, textElements);
     } catch (error) {
@@ -198,7 +194,7 @@ export class PdfParser {
     xrefTable: Map<number, XRefEntry>,
     width: number,
     height: number,
-    pageIndex: number
+    pageIndex: number,
   ): TextElement[] {
     if (!contents) {
       return [];
@@ -208,10 +204,7 @@ export class PdfParser {
 
     if (isReference(contents)) {
       try {
-        const objContent = this.pdfReader.extractObjectContent(
-          contents.objNum,
-          xrefTable
-        );
+        const objContent = this.pdfReader.extractObjectContent(contents.objNum, xrefTable);
         const objDict = ObjectParser.parseContent(objContent);
 
         if (isStream(objDict)) {
@@ -226,10 +219,7 @@ export class PdfParser {
       for (const elem of elements) {
         if (isReference(elem)) {
           try {
-            const objContent = this.pdfReader.extractObjectContent(
-              elem.objNum,
-              xrefTable
-            );
+            const objContent = this.pdfReader.extractObjectContent(elem.objNum, xrefTable);
             const objDict = ObjectParser.parseContent(objContent);
 
             if (isStream(objDict)) {
@@ -260,16 +250,13 @@ export class PdfParser {
    */
   private extractMetadata(
     xrefTable: Map<number, XRefEntry>,
-    trailer: { info?: number }
+    trailer: { info?: number },
   ): Record<string, string> {
     const metadata: Record<string, string> = {};
 
     if (trailer.info) {
       try {
-        const infoContent = this.pdfReader.extractObjectContent(
-          trailer.info,
-          xrefTable
-        );
+        const infoContent = this.pdfReader.extractObjectContent(trailer.info, xrefTable);
         const infoDict = ObjectParser.parseContent(infoContent);
 
         if (isDictionary(infoDict)) {
@@ -297,7 +284,13 @@ export class PdfParser {
     }
 
     const entries = dict.entries;
-    return entries.get(key) || null;
+    let val = entries.get(key);
+    if (!val && key.startsWith('/')) {
+      val = entries.get(key.substring(1));
+    } else if (!val) {
+      val = entries.get('/' + key);
+    }
+    return val || null;
   }
 
   /**
@@ -329,7 +322,7 @@ export class PdfParser {
    */
   private transformPage(
     elements: ReadonlyArray<TextElement>,
-    allElements: ReadonlyArray<TextElement>
+    allElements: ReadonlyArray<TextElement>,
   ): MarkdownNode[] {
     if (elements.length === 0) {
       return [];

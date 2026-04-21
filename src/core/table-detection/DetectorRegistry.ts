@@ -1,6 +1,6 @@
 /**
  * Detector Registry
- * 
+ *
  * Manages table detectors with configurable weights.
  * Follows SOLID:
  * - OCP: New detectors can be added without modifying registry
@@ -75,7 +75,7 @@ export class DetectorRegistry {
    */
   detectAll(
     elements: ReadonlyArray<TextElement>,
-    config: DetectionConfig = DEFAULT_DETECTION_CONFIG
+    config: DetectionConfig = DEFAULT_DETECTION_CONFIG,
   ): DetectedTable[] {
     const allTables: DetectedTable[] = [];
 
@@ -87,12 +87,12 @@ export class DetectorRegistry {
 
       try {
         const tables = detector.detect(elements, config);
-        
+
         // Calculate confidence for each table
         for (const table of tables) {
           const rawConfidence = detector.getConfidence(table);
           const weightedConfidence = rawConfidence * weight.weight;
-          
+
           // Create new table with updated confidence
           allTables.push({
             ...table,
@@ -108,7 +108,7 @@ export class DetectorRegistry {
     allTables.sort((a, b) => b.confidence - a.confidence);
 
     // Filter by minimum confidence
-    const filtered = allTables.filter(t => t.confidence >= this.config.minConfidence);
+    const filtered = allTables.filter((t) => t.confidence >= this.config.minConfidence);
 
     // Limit to max tables
     return filtered.slice(0, this.config.maxTables);
@@ -120,7 +120,7 @@ export class DetectorRegistry {
   detectWith(
     name: string,
     elements: ReadonlyArray<TextElement>,
-    config: DetectionConfig = DEFAULT_DETECTION_CONFIG
+    config: DetectionConfig = DEFAULT_DETECTION_CONFIG,
   ): DetectedTable[] {
     const detector = this.detectors.get(name);
     if (!detector) {
@@ -128,10 +128,10 @@ export class DetectorRegistry {
     }
 
     const tables = detector.detect(elements, config);
-    const weight = this.config.weights.find(w => w.name === name);
+    const weight = this.config.weights.find((w) => w.name === name);
     const weightValue = weight?.weight ?? 1.0;
 
-    return tables.map(table => ({
+    return tables.map((table) => ({
       ...table,
       confidence: detector.getConfidence(table) * weightValue,
     }));
@@ -142,7 +142,7 @@ export class DetectorRegistry {
    */
   updateWeights(weights: DetectorWeight[]): void {
     for (const weight of weights) {
-      const existing = this.config.weights.find(w => w.name === weight.name);
+      const existing = this.config.weights.find((w) => w.name === weight.name);
       if (existing) {
         existing.weight = weight.weight;
         existing.enabled = weight.enabled;
@@ -163,9 +163,7 @@ export class DetectorRegistry {
 /**
  * Creates a registry with all standard detectors registered.
  */
-export function createStandardRegistry(
-  config?: Partial<DetectorRegistryConfig>
-): DetectorRegistry {
+export function createStandardRegistry(config?: Partial<DetectorRegistryConfig>): DetectorRegistry {
   const registry = new DetectorRegistry(config);
 
   // Register all detectors

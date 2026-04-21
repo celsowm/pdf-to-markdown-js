@@ -110,7 +110,7 @@ export class TextExtractor {
       y: number;
       fontSize: number;
       fontName: string;
-    }>
+    }>,
   ): TextElement[] {
     if (positionedTexts.length === 0) {
       return [];
@@ -126,7 +126,7 @@ export class TextExtractor {
     });
 
     const textElements: TextElement[] = [];
-    let currentLine: Array<typeof positionedTexts[0]> = [sorted[0]];
+    let currentLine: Array<(typeof positionedTexts)[0]> = [sorted[0]];
 
     for (let i = 1; i < sorted.length; i++) {
       const item = sorted[i];
@@ -162,7 +162,7 @@ export class TextExtractor {
       y: number;
       fontSize: number;
       fontName: string;
-    }>
+    }>,
   ): TextElement[] {
     if (lineItems.length === 0) {
       return [];
@@ -201,8 +201,8 @@ export class TextExtractor {
             currentY,
             maxX - currentX,
             currentFontSize,
-            currentFontName
-          )
+            currentFontName,
+          ),
         );
 
         currentText = item.text;
@@ -222,8 +222,8 @@ export class TextExtractor {
         currentY,
         maxX - currentX,
         currentFontSize,
-        currentFontName
-      )
+        currentFontName,
+      ),
     );
 
     return elements;
@@ -238,7 +238,7 @@ export class TextExtractor {
     y: number,
     width: number,
     fontSize: number,
-    fontName: string
+    fontName: string,
   ): TextElement {
     // Use FontRegistry for robust font analysis
     const characteristics = FontRegistry.analyze(fontName);

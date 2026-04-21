@@ -1,9 +1,9 @@
 /**
  * Stream Table Detector (Whitespace-Based)
- * 
+ *
  * Analyzes "gutters" via horizontal and vertical projection profiles.
  * Best for: Borderless tables with clean, aligned columns (e.g., Excel exports).
- * 
+ *
  * Algorithm:
  * 1. Create vertical projection profile (histogram of text at each X)
  * 2. Find "gutters" (empty vertical spaces) → these define columns
@@ -12,7 +12,13 @@
  * 5. Intersect columns and rows to form table grid
  */
 
-import { ITableDetector, DetectedTable, TableCell, DetectionConfig, DetectorCategory } from './TableTypes';
+import {
+  ITableDetector,
+  DetectedTable,
+  TableCell,
+  DetectionConfig,
+  DetectorCategory,
+} from './TableTypes';
 import { TextElement } from '../../models/TextElement';
 
 export class StreamDetector implements ITableDetector {
@@ -33,14 +39,14 @@ export class StreamDetector implements ITableDetector {
 
     // Step 1: Find column boundaries via vertical projection
     const colBoundaries = this.findColumnBoundaries(elements, config.tolerance);
-    
+
     if (colBoundaries.length < config.minCols + 1) {
       return [];
     }
 
     // Step 2: Find row boundaries via horizontal projection
     const rowBoundaries = this.findRowBoundaries(elements, config.tolerance);
-    
+
     if (rowBoundaries.length < config.minRows + 1) {
       return [];
     }
@@ -59,16 +65,13 @@ export class StreamDetector implements ITableDetector {
   /**
    * Finds vertical gaps (gutters) that define columns.
    */
-  private findColumnBoundaries(
-    elements: ReadonlyArray<TextElement>,
-    tolerance: number
-  ): number[] {
+  private findColumnBoundaries(elements: ReadonlyArray<TextElement>, tolerance: number): number[] {
     // Group elements by X position
-    const xPositions = elements.map(el => el.x);
-    
+    const xPositions = elements.map((el) => el.x);
+
     // Cluster X positions
     const xClusters = this.clusterValues(xPositions, tolerance * 5);
-    
+
     if (xClusters.length < 2) {
       return [];
     }
@@ -87,16 +90,13 @@ export class StreamDetector implements ITableDetector {
   /**
    * Finds horizontal gaps that define rows.
    */
-  private findRowBoundaries(
-    elements: ReadonlyArray<TextElement>,
-    tolerance: number
-  ): number[] {
+  private findRowBoundaries(elements: ReadonlyArray<TextElement>, tolerance: number): number[] {
     // Group elements by Y position
-    const yPositions = elements.map(el => el.y);
-    
+    const yPositions = elements.map((el) => el.y);
+
     // Cluster Y positions
     const yClusters = this.clusterValues(yPositions, tolerance * 5);
-    
+
     if (yClusters.length < 2) {
       return [];
     }
@@ -125,7 +125,7 @@ export class StreamDetector implements ITableDetector {
     for (let i = 1; i < sorted.length; i++) {
       const lastCluster = clusters[clusters.length - 1];
       const clusterCenter = lastCluster.reduce((a, b) => a + b, 0) / lastCluster.length;
-      
+
       if (Math.abs(sorted[i] - clusterCenter) < tolerance) {
         lastCluster.push(sorted[i]);
       } else {
@@ -134,9 +134,7 @@ export class StreamDetector implements ITableDetector {
     }
 
     // Return center of each cluster
-    return clusters.map(cluster => 
-      cluster.reduce((a, b) => a + b, 0) / cluster.length
-    );
+    return clusters.map((cluster) => cluster.reduce((a, b) => a + b, 0) / cluster.length);
   }
 
   /**
@@ -146,7 +144,7 @@ export class StreamDetector implements ITableDetector {
     _elements: ReadonlyArray<TextElement>,
     colBoundaries: number[],
     rowBoundaries: number[],
-    config: DetectionConfig
+    config: DetectionConfig,
   ): DetectedTable | null {
     const rows = rowBoundaries.length - 1;
     const cols = colBoundaries.length - 1;

@@ -1,3 +1,5 @@
+import reportlab.rl_config
+reportlab.rl_config.pageCompression = 0
 #!/usr/bin/env python3
 """
 Generates test PDF files for testing the PDF to Markdown converter.

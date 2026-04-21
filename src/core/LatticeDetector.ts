@@ -97,15 +97,15 @@ export const DEFAULT_LATTICE_CONFIG: LatticeConfig = {
 
 /**
  * Lattice algorithm for table detection in PDFs.
- * 
+ *
  * Detects tables by finding horizontal and vertical lines that form grid structures.
  * This is the same approach used by Camelot-py and other PDF table extraction tools.
- * 
+ *
  * PDFs draw tables using line operators:
  * - `m` (moveto) + `l` (lineto) for lines
  * - `re` (rectangle) for boxes
  * - `S` or `s` (stroke) to render them
- * 
+ *
  * The algorithm:
  * 1. Parse content stream for line-drawing operations
  * 2. Group lines into horizontal and vertical sets
@@ -156,7 +156,8 @@ export class LatticeDetector {
 
     // PDF line drawing patterns
     // Rectangle: x y w h re
-    const rectPattern = /([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+re/g;
+    const rectPattern =
+      /([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+re/g;
     let match;
 
     while ((match = rectPattern.exec(content)) !== null) {
@@ -210,7 +211,8 @@ export class LatticeDetector {
     }
 
     // Line: x1 y1 m x2 y2 l S
-    const linePattern = /([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+m\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+l/g;
+    const linePattern =
+      /([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+m\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+l/g;
 
     while ((match = linePattern.exec(content)) !== null) {
       const x1 = parseFloat(match[1]);
@@ -232,10 +234,7 @@ export class LatticeDetector {
   /**
    * Finds intersection points between horizontal and vertical lines.
    */
-  private findIntersections(
-    horizontal: LineSegment[],
-    vertical: LineSegment[]
-  ): Intersection[] {
+  private findIntersections(horizontal: LineSegment[], vertical: LineSegment[]): Intersection[] {
     const intersections: Intersection[] = [];
 
     for (const hLine of horizontal) {
@@ -248,11 +247,11 @@ export class LatticeDetector {
         const vY2 = Math.max(vLine.y1, vLine.y2);
 
         // Check if vertical line crosses horizontal line
-        const xMatch = vX1 >= hX1 - this.config.lineTolerance &&
-                       vX1 <= hX2 + this.config.lineTolerance;
+        const xMatch =
+          vX1 >= hX1 - this.config.lineTolerance && vX1 <= hX2 + this.config.lineTolerance;
 
-        const yMatch = hY >= vY1 - this.config.lineTolerance &&
-                       hY <= vY2 + this.config.lineTolerance;
+        const yMatch =
+          hY >= vY1 - this.config.lineTolerance && hY <= vY2 + this.config.lineTolerance;
 
         if (xMatch && yMatch) {
           intersections.push({
@@ -270,20 +269,18 @@ export class LatticeDetector {
    * Clusters intersection points into potential tables.
    * Uses proximity-based clustering to group intersections.
    */
-  private clusterIntersections(
-    intersections: Intersection[]
-  ): Intersection[][] {
+  private clusterIntersections(intersections: Intersection[]): Intersection[][] {
     if (intersections.length < 4) {
       return [];
     }
 
     // Simple approach: if all intersections are within a reasonable area,
     // treat them as one table
-    const xs = intersections.map(p => p.x);
-    const ys = intersections.map(p => p.y);
+    const xs = intersections.map((p) => p.x);
+    const ys = intersections.map((p) => p.y);
     const xRange = Math.max(...xs) - Math.min(...xs);
     const yRange = Math.max(...ys) - Math.min(...ys);
-    
+
     // Use average spacing to determine if this is a single table
     const avgSpacing = Math.max(xRange, yRange) / Math.sqrt(intersections.length);
     const threshold = avgSpacing * 2;
@@ -301,7 +298,7 @@ export class LatticeDetector {
       const queue = [i];
       while (queue.length > 0) {
         const current = queue.shift()!;
-        
+
         for (let j = 0; j < intersections.length; j++) {
           if (visited.has(j)) continue;
 
@@ -382,11 +379,7 @@ export class LatticeDetector {
   /**
    * Groups intersection points by a coordinate axis.
    */
-  private groupByCoordinate(
-    points: Intersection[],
-    axis: 'x' | 'y',
-    tolerance: number
-  ): number[] {
+  private groupByCoordinate(points: Intersection[], axis: 'x' | 'y', tolerance: number): number[] {
     const values = points.map((p) => p[axis]);
     const sorted = [...new Set(values)].sort((a, b) => a - b);
 

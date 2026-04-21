@@ -1,4 +1,10 @@
-import { MarkdownNode, HeadingNode, ListNode, TableNode, InlineFormatting } from '../models/MarkdownNode';
+import {
+  MarkdownNode,
+  HeadingNode,
+  ListNode,
+  TableNode,
+  InlineFormatting,
+} from '../models/MarkdownNode';
 
 /**
  * Converts a Markdown AST to a markdown string.
