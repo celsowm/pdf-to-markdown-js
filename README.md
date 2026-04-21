@@ -4,7 +4,7 @@ A TypeScript library that converts PDF files to Markdown using a custom-built pa
 
 ## 🌐 Interactive Playground
 
-Try the library in your browser with our [interactive playground](https://your-username.github.io/pdf-to-markdown-js/playground/)!
+Try the library in your browser with our [interactive playground](https://celsowm.github.io/pdf-to-markdown-js/playground/)!
 
 - Upload PDF files and convert them to Markdown
 - Convert PDFs from URLs
