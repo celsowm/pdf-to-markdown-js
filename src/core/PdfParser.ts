@@ -2,14 +2,14 @@ import type { PdfReader, XRefEntry } from '../utils/PdfReader';
 import type { PdfObject, PdfDictionary, PdfStream } from '../core/ObjectParser';
 import { ObjectParser } from '../core/ObjectParser';
 import { ContentStreamParser } from '../core/ContentStreamParser';
-import { TextExtractor } from '../core/TextExtractor';
-import type { PdfDocument} from '../models/PdfDocument';
+import { TextExtractor, LineSegment, FillRegion } from '../core/TextExtractor';
+import type { PdfDocument } from '../models/PdfDocument';
 import { createPdfDocument } from '../models/PdfDocument';
-import type { Page} from '../models/Page';
+import type { Page } from '../models/Page';
 import { createPage } from '../models/Page';
 import type { TextElement } from '../models/TextElement';
 import type { MarkdownTransformer } from '../transformers/MarkdownTransformer';
-import type { MarkdownNode} from '../models/MarkdownNode';
+import type { MarkdownNode } from '../models/MarkdownNode';
 import { createDocumentNode } from '../models/MarkdownNode';
 
 import { logger } from '../utils/Logger';
@@ -244,7 +244,7 @@ export class PdfParser {
          logger.debug(`Page ${pageIndex + 1} /Contents not found in dictionary`);
       }
       
-      const { textElements, lines } = this.extractElementsFromContents(
+      const { textElements, lines, fillRegions } = this.extractElementsFromContents(
         contents,
         xrefTable,
         width,
@@ -253,8 +253,8 @@ export class PdfParser {
         cmaps
       );
 
-      logger.debug(`Page ${pageIndex + 1} extracted, ${textElements.length} text elements and ${lines.length} lines found`);
-      return createPage(pageIndex, width, height, textElements, lines);
+      logger.debug(`Page ${pageIndex + 1} extracted, ${textElements.length} text elements, ${lines.length} lines, and ${fillRegions.length} fill regions found`);
+      return createPage(pageIndex, width, height, textElements, lines, fillRegions);
     } catch (error) {
       logger.warn(`Error extracting page ${pageIndex + 1}:`, error);
       return null;
@@ -325,10 +325,10 @@ export class PdfParser {
     height: number,
     pageIndex: number,
     cmaps: Map<string, Map<number, string>>
-  ): { textElements: TextElement[]; lines: LineSegment[] } {
+  ): { textElements: TextElement[]; lines: LineSegment[]; fillRegions: FillRegion[] } {
     if (!contents) {
       logger.debug(`No /Contents found for page ${pageIndex + 1}`);
-      return { textElements: [], lines: [] };
+      return { textElements: [], lines: [], fillRegions: [] };
     }
 
     let streamContent = '';
@@ -346,7 +346,7 @@ export class PdfParser {
         }
       } catch (e) {
         logger.warn(`Failed to extract content stream for obj ${contents.objNum}`, e);
-        return { textElements: [], lines: [] };
+        return { textElements: [], lines: [], fillRegions: [] };
       }
     } else if (isArray(contents)) {
       // Multiple content streams
@@ -371,7 +371,7 @@ export class PdfParser {
 
     if (!streamContent) {
       logger.debug(`No stream content extracted for page ${pageIndex + 1}`);
-      return { textElements: [], lines: [] };
+      return { textElements: [], lines: [], fillRegions: [] };
     }
 
     // Parse content stream
@@ -384,6 +384,7 @@ export class PdfParser {
     return {
       textElements: textExtractor.extractTextElements(operations),
       lines: textExtractor.extractGraphics(operations),
+      fillRegions: textExtractor.extractFillRegions(operations),
     };
   }
 

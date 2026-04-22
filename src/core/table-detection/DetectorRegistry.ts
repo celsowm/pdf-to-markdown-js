@@ -19,7 +19,7 @@ import {
   DEFAULT_REGISTRY_CONFIG,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
-import type { LineSegment } from '../TextExtractor';
+import type { LineSegment, FillRegion } from '../TextExtractor';
 
 // Import all detectors
 import { LatticeDetector } from './LatticeDetector';
@@ -31,6 +31,7 @@ import { GraphBasedDetector } from './GraphBasedDetector';
 import { MorphologyDetector } from './MorphologyDetector';
 import { VisualSignatureDetector } from './VisualSignatureDetector';
 import { EntropyDetector } from './EntropyDetector';
+import { BackgroundDetector } from './BackgroundDetector';
 
 /**
  * Registry that manages table detectors and their execution.
@@ -79,6 +80,7 @@ export class DetectorRegistry {
     elements: ReadonlyArray<TextElement>,
     config: DetectionConfig = DEFAULT_DETECTION_CONFIG,
     lines?: ReadonlyArray<LineSegment>,
+    fillRegions?: ReadonlyArray<FillRegion>,
   ): DetectedTable[] {
     const allTables: DetectedTable[] = [];
 
@@ -89,7 +91,7 @@ export class DetectorRegistry {
       if (!detector) continue;
 
       try {
-        const tables = detector.detect(elements, config, lines);
+        const tables = detector.detect(elements, config, lines, fillRegions);
 
         // Calculate confidence for each table
         for (const table of tables) {
@@ -177,13 +179,14 @@ export class DetectorRegistry {
     elements: ReadonlyArray<TextElement>,
     config: DetectionConfig = DEFAULT_DETECTION_CONFIG,
     lines?: ReadonlyArray<LineSegment>,
+    fillRegions?: ReadonlyArray<FillRegion>,
   ): DetectedTable[] {
     const detector = this.detectors.get(name);
     if (!detector) {
       throw new Error(`Detector ${name} not found`);
     }
 
-    const tables = detector.detect(elements, config, lines);
+    const tables = detector.detect(elements, config, lines, fillRegions);
     const weight = this.config.weights.find((w) => w.name === name);
     const weightValue = weight?.weight ?? 1.0;
 
@@ -232,6 +235,7 @@ export function createStandardRegistry(config?: Partial<DetectorRegistryConfig>)
   registry.register(new MorphologyDetector());
   registry.register(new VisualSignatureDetector());
   registry.register(new EntropyDetector());
+  registry.register(new BackgroundDetector());
 
   return registry;
 }

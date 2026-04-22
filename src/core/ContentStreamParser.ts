@@ -34,6 +34,8 @@ export interface TextOperation {
     | 'pathFillEvenOdd'
     | 'pathFillAndStroke'
     | 'pathFillAndStrokeEvenOdd'
+    | 'setFillColor'
+    | 'setStrokeColor'
     | 'unknown';
   readonly text?: string;
   readonly matrix?: TextMatrix;
@@ -43,6 +45,7 @@ export interface TextOperation {
   readonly y?: number;
   readonly width?: number;
   readonly height?: number;
+  readonly color?: number[]; // [r, g, b] or [gray] or [c, m, y, k]
   readonly relative?: boolean;
 }
 
@@ -384,6 +387,40 @@ export class ContentStreamParser {
         case 'w': {
           const width = Number(this.stack.pop());
           return { type: 'lineWidth', width };
+        }
+        case 'rg': {
+          const b = Number(this.stack.pop());
+          const g = Number(this.stack.pop());
+          const r = Number(this.stack.pop());
+          return { type: 'setFillColor', color: [r, g, b] };
+        }
+        case 'RG': {
+          const b = Number(this.stack.pop());
+          const g = Number(this.stack.pop());
+          const r = Number(this.stack.pop());
+          return { type: 'setStrokeColor', color: [r, g, b] };
+        }
+        case 'g': {
+          const gray = Number(this.stack.pop());
+          return { type: 'setFillColor', color: [gray] };
+        }
+        case 'G': {
+          const gray = Number(this.stack.pop());
+          return { type: 'setStrokeColor', color: [gray] };
+        }
+        case 'k': {
+          const k = Number(this.stack.pop());
+          const y = Number(this.stack.pop());
+          const m = Number(this.stack.pop());
+          const c = Number(this.stack.pop());
+          return { type: 'setFillColor', color: [c, m, y, k] };
+        }
+        case 'K': {
+          const k = Number(this.stack.pop());
+          const y = Number(this.stack.pop());
+          const m = Number(this.stack.pop());
+          const c = Number(this.stack.pop());
+          return { type: 'setStrokeColor', color: [c, m, y, k] };
         }
         default:
           // For now we don't log every single unknown operator to avoid spam

@@ -1,5 +1,5 @@
 import type { TextElement } from '../../models/TextElement';
-import type { LineSegment } from '../TextExtractor';
+import type { LineSegment, FillRegion } from '../TextExtractor';
 import type { TableCell, DetectedTable, DetectionConfig } from './TableTypes';
 
 /**

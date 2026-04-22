@@ -1,5 +1,5 @@
 import type { TextElement } from './TextElement';
-import type { LineSegment } from '../core/TextExtractor';
+import type { LineSegment, FillRegion } from '../core/TextExtractor';
 
 /**
  * Represents a single page in a PDF document.
@@ -10,6 +10,7 @@ export interface Page {
   readonly height: number;
   readonly textElements: ReadonlyArray<TextElement>;
   readonly lines: ReadonlyArray<LineSegment>;
+  readonly fillRegions: ReadonlyArray<FillRegion>;
 }
 
 /**
@@ -21,6 +22,7 @@ export function createPage(
   height: number,
   textElements: ReadonlyArray<TextElement>,
   lines: ReadonlyArray<LineSegment> = [],
+  fillRegions: ReadonlyArray<FillRegion> = [],
 ): Page {
   return {
     index,
@@ -28,5 +30,6 @@ export function createPage(
     height,
     textElements,
     lines,
+    fillRegions,
   };
 }

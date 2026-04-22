@@ -4,8 +4,8 @@
  */
 
 import type { TextElement } from '../../models/TextElement';
-import type { LineSegment } from '../TextExtractor';
-import type { LineSegment } from '../TextExtractor';
+import type { LineSegment, FillRegion } from '../core/TextExtractor';
+
 
 /**
  * Represents a cell in a detected table.
@@ -90,12 +90,13 @@ export type DetectorCategory =
  */
 export interface ITableDetector {
   /**
-   * Detects tables in text elements and optional lines.
+   * Detects tables in text elements and optional lines/fill regions.
    */
   detect(
     elements: ReadonlyArray<TextElement>,
     config: DetectionConfig,
     lines?: ReadonlyArray<LineSegment>,
+    fillRegions?: ReadonlyArray<FillRegion>,
   ): DetectedTable[];
 
   /**
@@ -148,6 +149,7 @@ export const DEFAULT_REGISTRY_CONFIG: DetectorRegistryConfig = {
     { name: 'AnchorZoning', weight: 0.4, enabled: false }, // Domain-specific
     { name: 'SCA', weight: 0.7, enabled: true }, // Increased weight for statistical
     { name: 'GraphBased', weight: 0.4, enabled: true },
+    { name: 'Background', weight: 0.7, enabled: true },
     { name: 'Morphology', weight: 0.3, enabled: false }, // Expensive
     { name: 'VisualSignature', weight: 0.9, enabled: false }, // Needs templates
     { name: 'Entropy', weight: 0.3, enabled: true },

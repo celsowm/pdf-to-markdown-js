@@ -16,6 +16,18 @@ export interface LineSegment {
   readonly isHorizontal: boolean;
   readonly isVertical: boolean;
 }
+
+/**
+ * Represents a filled rectangular region (e.g. background color).
+ */
+export interface FillRegion {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly color: number[];
+}
+
 /**
  * Default font sizes for common font names.
  */
@@ -37,8 +49,6 @@ const WORD_TOLERANCE = 3;
 
 /**
  * Extracts and organizes text from PDF text operations.
-...
-
  * Applies heuristics to detect paragraphs, headings, and other structural elements.
  */
 export class TextExtractor {
@@ -116,7 +126,6 @@ export class TextExtractor {
             mappedText = mappedText.replace(/\0/g, '');
 
             // (x, y) in text space -> (tx, ty) in user space
-            // Simple approximation for now
             const tx = tm.e * ctm.a + tm.f * ctm.c + ctm.e;
             const ty = tm.e * ctm.b + tm.f * ctm.d + ctm.f;
 
@@ -213,6 +222,58 @@ export class TextExtractor {
     }
 
     return lines;
+  }
+
+  /**
+   * Extracts filled rectangular regions from path operations.
+   */
+  extractFillRegions(operations: TextOperation[]): FillRegion[] {
+    const regions: FillRegion[] = [];
+    
+    let currentFillColor: number[] = [0, 0, 0]; // Default black
+    let ctm: TextMatrix = { ...IDENTITY_MATRIX };
+    const ctmStack: TextMatrix[] = [];
+
+    for (let i = 0; i < operations.length; i++) {
+      const op = operations[i];
+      switch (op.type) {
+        case 'saveState':
+          ctmStack.push({ ...ctm });
+          break;
+        case 'restoreState':
+          if (ctmStack.length > 0) ctm = ctmStack.pop()!;
+          break;
+        case 'concatenateMatrix':
+          if (op.matrix) ctm = this.multiplyMatrices(op.matrix, ctm);
+          break;
+        case 'setFillColor':
+          if (op.color) currentFillColor = op.color;
+          break;
+        case 'pathFill':
+        case 'pathFillEvenOdd':
+        case 'pathFillAndStroke':
+        case 'pathFillAndStrokeEvenOdd':
+          // Check previous operator for rect
+          if (i > 0) {
+            const prev = operations[i - 1];
+            if (prev.type === 'pathRect' && prev.x !== undefined && prev.y !== undefined && prev.width !== undefined && prev.height !== undefined) {
+              const p1 = this.transformPoint(prev.x, prev.y, ctm);
+              const p2 = this.transformPoint(prev.x + prev.width, prev.y + prev.height, ctm);
+              
+              regions.push({
+                x: Math.min(p1.x, p2.x),
+                y: Math.min(p1.y, p2.y),
+                width: Math.abs(p1.x - p2.x),
+                height: Math.abs(p1.y - p2.y),
+                color: [...currentFillColor],
+              });
+            }
+          }
+          break;
+      }
+    }
+
+    return regions;
   }
 
   private transformPoint(x: number, y: number, m: TextMatrix): { x: number; y: number } {

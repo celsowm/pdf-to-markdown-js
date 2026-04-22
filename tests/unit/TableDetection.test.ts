@@ -50,7 +50,8 @@ describe('Table Detection System', () => {
       expect(detectors).toContain('RXYCut');
       expect(detectors).toContain('SCA');
       expect(detectors).toContain('GraphBased');
-      expect(detectors.length).toBe(9);
+      expect(detectors).toContain('Background');
+      expect(detectors.length).toBe(10);
     });
 
     it('should allow detector registration', () => {
@@ -196,7 +197,7 @@ describe('Table Detection System', () => {
       const canTransform = transformer.canTransform(elements);
       expect(canTransform).toBe(true);
 
-      const { nodes } = transformer.transform(elements, elements);
+      const { nodes } = transformer.transform(elements, { index: 0, width: 612, height: 792, textElements: elements, lines: [], fillRegions: [] });
       expect(nodes.length).toBeGreaterThan(0);
     });
 

@@ -92,8 +92,8 @@ export class TableTransformer implements MarkdownTransformer {
       tolerance: this.config.tolerance ?? DEFAULT_DETECTION_CONFIG.tolerance,
     };
 
-    // Run all detectors via registry, now passing physical lines
-    let tables = this.registry.detectAll(elements, config, page.lines);
+    // Run all detectors via registry, now passing physical lines and fill regions
+    let tables = this.registry.detectAll(elements, config, page.lines, page.fillRegions);
 
     
     // Filter by confidence and minimum physical requirements
