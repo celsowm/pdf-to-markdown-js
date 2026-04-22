@@ -15,11 +15,11 @@ export enum LogLevel {
  */
 export interface ILogger {
   setLevel(level: LogLevel): void;
-  error(message: string, ...args: any[]): void;
-  warn(message: string, ...args: any[]): void;
-  info(message: string, ...args: any[]): void;
-  debug(message: string, ...args: any[]): void;
-  verbose(message: string, ...args: any[]): void;
+  error(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  info(message: string, ...args: unknown[]): void;
+  debug(message: string, ...args: unknown[]): void;
+  verbose(message: string, ...args: unknown[]): void;
   isEnabled(level: LogLevel): boolean;
 }
 
@@ -32,8 +32,8 @@ class LoggerImpl implements ILogger {
   constructor() {
     // Allow setting level from global scope (browser console)
     if (typeof window !== 'undefined') {
-      (window as any).setPdfLogLevel = (level: number) => this.setLevel(level);
-      (window as any).PdfLogLevel = LogLevel;
+      (window as unknown as { setPdfLogLevel: (level: number) => void }).setPdfLogLevel = (level: number): void => this.setLevel(level);
+      (window as unknown as { PdfLogLevel: typeof LogLevel }).PdfLogLevel = LogLevel;
     }
   }
 
@@ -54,31 +54,31 @@ class LoggerImpl implements ILogger {
     return this.level >= level;
   }
 
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     if (this.isEnabled(LogLevel.ERROR)) {
       console.error(this.formatMessage('ERROR', message), ...args);
     }
   }
 
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     if (this.isEnabled(LogLevel.WARN)) {
       console.warn(this.formatMessage('WARN', message), ...args);
     }
   }
 
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     if (this.isEnabled(LogLevel.INFO)) {
       console.log(this.formatMessage('INFO', message), ...args);
     }
   }
 
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (this.isEnabled(LogLevel.DEBUG)) {
       console.log(this.formatMessage('DEBUG', message), ...args);
     }
   }
 
-  verbose(message: string, ...args: any[]): void {
+  verbose(message: string, ...args: unknown[]): void {
     if (this.isEnabled(LogLevel.VERBOSE)) {
       console.log(this.formatMessage('VERBOSE', message), ...args);
     }

@@ -80,13 +80,14 @@ export class Tokenizer {
 
     // Delimiters
     switch (char) {
-      case '<':
+      case '<': {
         if (this.content[this.position + 1] === '<') {
           this.position += 2;
           return { type: TokenType.DICT_START, value: '<<', lineNumber: this.lineNumber, charOffset: startOffset };
         }
         const hexToken = this.readHexString();
         return { ...hexToken, charOffset: startOffset };
+      }
       case '>':
         if (this.content[this.position + 1] === '>') {
           this.position += 2;
@@ -101,12 +102,14 @@ export class Tokenizer {
       case ']':
         this.position++;
         return { type: TokenType.ARRAY_END, value: ']', lineNumber: this.lineNumber, charOffset: startOffset };
-      case '/':
+      case '/': {
         const nameToken = this.readName();
         return { ...nameToken, charOffset: startOffset };
-      case '(':
+      }
+      case '(': {
         const stringToken = this.readString();
         return { ...stringToken, charOffset: startOffset };
+      }
       case ')':
         this.position++;
         return { type: TokenType.STRING, value: ')', lineNumber: this.lineNumber, charOffset: startOffset };

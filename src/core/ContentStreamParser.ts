@@ -54,7 +54,7 @@ export const IDENTITY_MATRIX: TextMatrix = {
 export class ContentStreamParser {
   private readonly streamContent: string;
   private position: number = 0;
-  private stack: any[] = [];
+  private stack: unknown[] = [];
 
   constructor(streamContent: string) {
     this.streamContent = streamContent;
@@ -210,9 +210,9 @@ export class ContentStreamParser {
     return result;
   }
 
-  private parseArray(): any[] {
+  private parseArray(): unknown[] {
     this.position++; // skip [
-    const arr: any[] = [];
+    const arr: unknown[] = [];
     while (this.position < this.streamContent.length) {
       this.skipWhitespace();
       if (this.streamContent[this.position] === ']') {
@@ -278,22 +278,22 @@ export class ContentStreamParser {
           return { type: 'setFont', fontName: String(name), fontSize: Number(size) };
         }
         case 'Tm': {
-          const f = this.stack.pop();
-          const e = this.stack.pop();
-          const d = this.stack.pop();
-          const c = this.stack.pop();
-          const b = this.stack.pop();
-          const a = this.stack.pop();
+          const f = Number(this.stack.pop());
+          const e = Number(this.stack.pop());
+          const d = Number(this.stack.pop());
+          const c = Number(this.stack.pop());
+          const b = Number(this.stack.pop());
+          const a = Number(this.stack.pop());
           return { type: 'setTextMatrix', matrix: { a, b, c, d, e, f } };
         }
         case 'Td': {
-          const y = this.stack.pop();
-          const x = this.stack.pop();
+          const y = Number(this.stack.pop());
+          const x = Number(this.stack.pop());
           return { type: 'moveToNextLine', x, y, relative: true };
         }
         case 'TD': {
-          const y = this.stack.pop();
-          const x = this.stack.pop();
+          const y = Number(this.stack.pop());
+          const x = Number(this.stack.pop());
           // TD also sets leading, but for text position it's like Td
           return { type: 'moveToNextLine', x, y, relative: true };
         }
@@ -327,12 +327,12 @@ export class ContentStreamParser {
           return { type: 'text', text: String(text), fontName, fontSize };
         }
         case 'cm': {
-          const f = this.stack.pop();
-          const e = this.stack.pop();
-          const d = this.stack.pop();
-          const c = this.stack.pop();
-          const b = this.stack.pop();
-          const a = this.stack.pop();
+          const f = Number(this.stack.pop());
+          const e = Number(this.stack.pop());
+          const d = Number(this.stack.pop());
+          const c = Number(this.stack.pop());
+          const b = Number(this.stack.pop());
+          const a = Number(this.stack.pop());
           return { type: 'concatenateMatrix', matrix: { a, b, c, d, e, f } };
         }
         case 'q':

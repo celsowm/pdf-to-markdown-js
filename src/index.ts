@@ -5,7 +5,6 @@ import {
   HeadingTransformer,
   ListTransformer,
   ParagraphTransformer,
-  InlineFormatterTransformer,
   TableTransformer,
 } from './transformers';
 import type { TableTransformerConfig } from './transformers';
@@ -139,7 +138,6 @@ export type {
 export { HeadingTransformer } from './transformers/HeadingTransformer';
 export { ListTransformer } from './transformers/ListTransformer';
 export { ParagraphTransformer } from './transformers/ParagraphTransformer';
-export { InlineFormatterTransformer } from './transformers/InlineFormatterTransformer';
 export { TableTransformer } from './transformers/TableTransformer';
 export type { TableTransformerConfig } from './transformers/TableTransformer';
 

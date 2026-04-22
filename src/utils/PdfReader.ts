@@ -80,8 +80,6 @@ export class PdfReader {
    * Finds and parses the cross-reference table.
    */
   parseXRefTable(): Map<number, XRefEntry> {
-    const xrefEntries = new Map<number, XRefEntry>();
-    
     try {
       const startXRef = this.findStartXRef();
       const xrefBuffer = this.buffer.subarray(startXRef);
@@ -166,7 +164,7 @@ export class PdfReader {
     }
 
     const trailerContent = trailerMatch[1];
-    const trailer: Record<string, any> = {};
+    const trailer: Record<string, unknown> = {};
 
     const sizeMatch = /\/Size\s+(\d+)/.exec(trailerContent);
     if (sizeMatch) {
@@ -188,7 +186,7 @@ export class PdfReader {
       trailer.info = parseInt(infoMatch[1], 10);
     }
 
-    return trailer as Trailer;
+    return trailer as unknown as Trailer;
   }
 
   /**
@@ -247,13 +245,10 @@ export class PdfReader {
     const contentStart = start + objRelIndex + 3;
     
     // Find "endobj" keyword
-    // We search in chunks to avoid converting huge parts to string
-    let searchPos = contentStart;
-    let endobjRelIndex = -1;
     const endobjMarker = Buffer.from('endobj');
     
     // Efficient buffer search for endobj
-    const endobjIndex = this.buffer.indexOf(endobjMarker, searchPos);
+    const endobjIndex = this.buffer.indexOf(endobjMarker, contentStart);
     
     if (endobjIndex === -1) {
       throw new Error(`Object ${objNum} end not found`);
@@ -276,9 +271,10 @@ export class PdfReader {
   findAllStreams(): Array<{ start: number; end: number; content: string }> {
     const streams: Array<{ start: number; end: number; content: string }> = [];
     const streamPattern = /stream\r?\n([\s\S]*?)endstream/g;
+    const content = this.buffer.toString('binary');
     let match;
 
-    while ((match = streamPattern.exec(this.buffer)) !== null) {
+    while ((match = streamPattern.exec(content)) !== null) {
       streams.push({
         start: match.index,
         end: match.index + match[0].length,

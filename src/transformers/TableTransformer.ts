@@ -162,30 +162,6 @@ export class TableTransformer implements MarkdownTransformer {
   }
 
   /**
-   * Converts detected tables to Markdown nodes.
-   */
-  private convertTablesToMarkdown(
-    tables: DetectedTable[],
-    elements: ReadonlyArray<TextElement>,
-  ): TransformationResult {
-    const nodes: MarkdownNode[] = [];
-    const allConsumedElements = new Set<TextElement>();
-
-    for (const table of tables) {
-      const { node, consumedElements } = this.buildMarkdownTable(table, elements);
-      if (node) {
-        nodes.push(node);
-        consumedElements.forEach((el) => allConsumedElements.add(el));
-      }
-    }
-
-    return {
-      nodes,
-      consumedElements: Array.from(allConsumedElements),
-    };
-  }
-
-  /**
    * Builds a Markdown table node from a detected table.
    */
   private buildMarkdownTable(
