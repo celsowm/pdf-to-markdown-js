@@ -143,11 +143,11 @@ export interface DetectorRegistryConfig {
  */
 export const DEFAULT_REGISTRY_CONFIG: DetectorRegistryConfig = {
   weights: [
-    { name: 'Lattice', weight: 0.8, enabled: true },
-    { name: 'Stream', weight: 0.4, enabled: true }, // Reduced weight for whitespace
+    { name: 'Lattice', weight: 0.6, enabled: true },
+    { name: 'Stream', weight: 0.2, enabled: true }, // Reduced weight further after tuning
     { name: 'RXYCut', weight: 0.5, enabled: true },
-    { name: 'AnchorZoning', weight: 0.4, enabled: false }, // Domain-specific
-    { name: 'SCA', weight: 0.7, enabled: true }, // Increased weight for statistical
+    { name: 'AnchorZoning', weight: 0.5, enabled: true },
+    { name: 'SCA', weight: 0.9, enabled: true }, // Increased weight after tuning
     { name: 'GraphBased', weight: 0.4, enabled: true },
     { name: 'Background', weight: 0.7, enabled: true },
     { name: 'Morphology', weight: 0.3, enabled: false }, // Expensive
