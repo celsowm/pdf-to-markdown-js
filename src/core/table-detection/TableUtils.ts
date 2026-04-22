@@ -139,4 +139,68 @@ export class TableUtils {
       center: cluster.reduce((a, b) => a + b, 0) / cluster.length,
     }));
   }
+
+  /**
+   * Creates a projection profile (histogram) of element density along an axis.
+   */
+  static createProjectionProfile(
+    elements: TextElement[],
+    axis: 'x' | 'y',
+    binSize: number = 5,
+  ): number[] {
+    if (elements.length === 0) return [];
+
+    const min = Math.min(...elements.map(el => axis === 'x' ? el.x : (el.y - el.height)));
+    const max = Math.max(...elements.map(el => axis === 'x' ? (el.x + el.width) : el.y));
+    const size = Math.ceil((max - min) / binSize) + 1;
+    const profile = new Array(size).fill(0);
+
+    for (const el of elements) {
+      const start = axis === 'x' ? el.x : (el.y - el.height);
+      const end = axis === 'x' ? (el.x + el.width) : el.y;
+      
+      const startBin = Math.floor((start - min) / binSize);
+      const endBin = Math.floor((end - min) / binSize);
+      
+      for (let i = Math.max(0, startBin); i <= Math.min(size - 1, endBin); i++) {
+        profile[i]++;
+      }
+    }
+
+    return profile;
+  }
+
+  /**
+   * Identifies continuous blocks in a projection profile (potential table regions).
+   */
+  static findBlocks(profile: number[], binSize: number, minSize: number, gapThreshold: number = 2): { start: number, end: number }[] {
+    const blocks: { start: number, end: number }[] = [];
+    let currentBlock: { start: number } | null = null;
+    let gapCount = 0;
+
+    for (let i = 0; i < profile.length; i++) {
+      if (profile[i] > 0) {
+        if (currentBlock === null) {
+          currentBlock = { start: i };
+        }
+        gapCount = 0;
+      } else if (currentBlock !== null) {
+        gapCount++;
+        if (gapCount >= gapThreshold) {
+          const end = i - gapCount;
+          if ((end - currentBlock.start) * binSize >= minSize) {
+            blocks.push({ start: currentBlock.start, end });
+          }
+          currentBlock = null;
+          gapCount = 0;
+        }
+      }
+    }
+
+    if (currentBlock !== null) {
+      blocks.push({ start: currentBlock.start, end: profile.length - 1 });
+    }
+
+    return blocks;
+  }
 }

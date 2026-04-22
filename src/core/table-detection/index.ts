@@ -22,5 +22,7 @@ export { GraphBasedDetector } from './GraphBasedDetector';
 export { MorphologyDetector } from './MorphologyDetector';
 export { VisualSignatureDetector } from './VisualSignatureDetector';
 export { EntropyDetector } from './EntropyDetector';
+export { BackgroundDetector } from './BackgroundDetector';
+export { TableUtils } from './TableUtils';
 
 export { DetectorRegistry, createStandardRegistry } from './DetectorRegistry';
