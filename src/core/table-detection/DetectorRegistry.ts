@@ -92,7 +92,10 @@ export class DetectorRegistry {
         // Calculate confidence for each table
         for (const table of tables) {
           const rawConfidence = detector.getConfidence(table);
+          if (rawConfidence <= 0) continue;
+          
           const weightedConfidence = rawConfidence * weight.weight;
+          if (weightedConfidence < this.config.minConfidence) continue;
 
           // Create new table with updated confidence
           allTables.push({

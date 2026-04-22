@@ -97,9 +97,14 @@ export class TextExtractor {
           if (operation.text) {
             // Apply CMap if available for this font
             const cmap = this.cmaps.get(currentFontName);
-            const mappedText = cmap ? CMapParser.apply(operation.text, cmap) : operation.text;
+            let mappedText = cmap ? CMapParser.apply(operation.text, cmap) : operation.text;
             
-            // Transform text position by CTM
+            // Remove null bytes and other common PDF artifacts
+            mappedText = mappedText.replace(/\0/g, '');
+
+            if (mappedText.trim().length === 0 && operation.text.length > 0) {
+                // If it was all null bytes, try fallback if it's potentially UTF-16
+            }
             // (x, y) in text space -> (tx, ty) in user space
             const tx = tm.e * ctm.a + tm.f * ctm.c + ctm.e;
             const ty = tm.e * ctm.b + tm.f * ctm.d + ctm.f;

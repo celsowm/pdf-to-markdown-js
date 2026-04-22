@@ -15,11 +15,11 @@
 import type {
   ITableDetector,
   DetectedTable,
-  TableCell,
   DetectionConfig,
   DetectorCategory,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import { TableUtils } from './TableUtils';
 
 export class StreamDetector implements ITableDetector {
   getName(): string {
@@ -37,154 +37,101 @@ export class StreamDetector implements ITableDetector {
   detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig): DetectedTable[] {
     if (elements.length < 4) return [];
 
-    // Step 1: Find column boundaries via vertical projection
-    const colBoundaries = this.findColumnBoundaries(elements, config.tolerance);
+    // Group elements into potential rows first to avoid mixing tables
+    const allRows = this.groupByY(elements, config.tolerance);
+    
+    // Partition rows into table candidates
+    const candidates = this.partitionRows(allRows, config.tolerance);
+    const tables: DetectedTable[] = [];
 
-    if (colBoundaries.length < config.minCols + 1) {
-      return [];
+    for (const candidateElements of candidates) {
+      if (candidateElements.length < config.minRows) continue;
+
+      const flatElements = candidateElements.flat();
+      
+      // Step 1: Find column boundaries via vertical projection
+      const colBoundaries = this.findColumnBoundaries(flatElements, config.tolerance);
+
+      if (colBoundaries.length < config.minCols + 1) {
+        continue;
+      }
+
+      // Step 2: Build table from grid
+      const table = TableUtils.buildTableFromGrid(
+        `stream-${Date.now()}-${tables.length}`,
+        this.getName(),
+        candidateElements,
+        colBoundaries,
+        config
+      );
+
+      if (table) {
+        tables.push(table);
+      }
     }
 
-    // Step 2: Find row boundaries via horizontal projection
-    const rowBoundaries = this.findRowBoundaries(elements, config.tolerance);
-
-    if (rowBoundaries.length < config.minRows + 1) {
-      return [];
-    }
-
-    // Step 3: Build table from grid
-    const table = this.buildGridTable(elements, colBoundaries, rowBoundaries, config);
-    return table ? [table] : [];
+    return tables;
   }
 
   getConfidence(table: DetectedTable): number {
-    const alignmentScore = Math.min(table.cols / 10, 0.5);
-    const sizeScore = Math.min((table.rows * table.cols) / 30, 0.5);
-    return alignmentScore + sizeScore;
+    if (table.cols < 2) return 0;
+    
+    // Score based on number of columns and rows
+    const columnScore = Math.min(table.cols / 8, 0.4);
+    const rowScore = Math.min(table.rows / 15, 0.4);
+    
+    // Bonus for more than 2 columns (most text-only false positives are 2 columns)
+    const columnBonus = table.cols > 2 ? 0.2 : 0;
+    
+    // Penalty for very few rows
+    const rowPenalty = table.rows < 3 ? 0.4 : 0;
+    
+    return Math.max(0, columnScore + rowScore + columnBonus - rowPenalty);
   }
 
   /**
    * Finds vertical gaps (gutters) that define columns.
    */
   private findColumnBoundaries(elements: ReadonlyArray<TextElement>, tolerance: number): number[] {
-    // Group elements by X position
-    const xPositions = elements.map((el) => el.x);
-
-    // Cluster X positions
-    const xClusters = this.clusterValues(xPositions, tolerance * 5);
-
-    if (xClusters.length < 2) {
-      return [];
-    }
-
-    // Column boundaries are between clusters
-    const boundaries: number[] = [xClusters[0]];
-    for (let i = 1; i < xClusters.length; i++) {
-      // Add boundary midway between clusters
-      boundaries.push((xClusters[i - 1] + xClusters[i]) / 2);
-    }
-    boundaries.push(xClusters[xClusters.length - 1]);
-
-    return boundaries;
+    return TableUtils.findGutters([...elements], tolerance);
   }
 
-  /**
-   * Finds horizontal gaps that define rows.
-   */
-  private findRowBoundaries(elements: ReadonlyArray<TextElement>, tolerance: number): number[] {
-    // Group elements by Y position
-    const yPositions = elements.map((el) => el.y);
+  private groupByY(elements: ReadonlyArray<TextElement>, tolerance: number): TextElement[][] {
+    const sorted = [...elements].sort((a, b) => b.y - a.y);
+    const rows: TextElement[][] = [];
 
-    // Cluster Y positions
-    const yClusters = this.clusterValues(yPositions, tolerance * 5);
-
-    if (yClusters.length < 2) {
-      return [];
-    }
-
-    // Row boundaries are between clusters
-    const boundaries: number[] = [yClusters[0]];
-    for (let i = 1; i < yClusters.length; i++) {
-      // Add boundary midway between clusters
-      boundaries.push((yClusters[i - 1] + yClusters[i]) / 2);
-    }
-    boundaries.push(yClusters[yClusters.length - 1]);
-
-    return boundaries;
-  }
-
-  /**
-   * Clusters numeric values that are close together.
-   * Returns the center of each cluster.
-   */
-  private clusterValues(values: number[], tolerance: number): number[] {
-    if (values.length === 0) return [];
-
-    const sorted = [...new Set(values)].sort((a, b) => a - b);
-    const clusters: number[][] = [[sorted[0]]];
-
-    for (let i = 1; i < sorted.length; i++) {
-      const lastCluster = clusters[clusters.length - 1];
-      const clusterCenter = lastCluster.reduce((a, b) => a + b, 0) / lastCluster.length;
-
-      if (Math.abs(sorted[i] - clusterCenter) < tolerance) {
-        lastCluster.push(sorted[i]);
+    for (const el of sorted) {
+      const existingRow = rows.find(r => Math.abs(r[0].y - el.y) <= tolerance);
+      if (existingRow) {
+        existingRow.push(el);
       } else {
-        clusters.push([sorted[i]]);
+        rows.push([el]);
       }
     }
-
-    // Return center of each cluster
-    return clusters.map((cluster) => cluster.reduce((a, b) => a + b, 0) / cluster.length);
+    
+    rows.forEach(r => r.sort((a, b) => a.x - b.x));
+    return rows;
   }
 
-  /**
-   * Builds table from column and row boundaries.
-   */
-  private buildGridTable(
-    _elements: ReadonlyArray<TextElement>,
-    colBoundaries: number[],
-    rowBoundaries: number[],
-    config: DetectionConfig,
-  ): DetectedTable | null {
-    const rows = rowBoundaries.length - 1;
-    const cols = colBoundaries.length - 1;
+  private partitionRows(rows: TextElement[][], tolerance: number): TextElement[][][] {
+    if (rows.length === 0) return [];
 
-    if (rows < config.minRows || cols < config.minCols) {
-      return null;
-    }
+    const candidates: TextElement[][][] = [];
+    let current: TextElement[][] = [rows[0]];
 
-    const cells: TableCell[] = [];
+    for (let i = 1; i < rows.length; i++) {
+      const prevY = rows[i-1][0].y;
+      const currY = rows[i][0].y;
+      const gap = Math.abs(prevY - currY);
 
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const x1 = colBoundaries[col];
-        const x2 = colBoundaries[col + 1];
-        const y1 = rowBoundaries[row];
-        const y2 = rowBoundaries[row + 1];
-
-        cells.push({
-          rowIndex: row,
-          colIndex: col,
-          x1,
-          y1,
-          x2,
-          y2,
-        });
+      if (gap > tolerance * 10) {
+        candidates.push(current);
+        current = [rows[i]];
+      } else {
+        current.push(rows[i]);
       }
     }
-
-    return {
-      id: `stream-${Date.now()}`,
-      detectorName: this.getName(),
-      x1: colBoundaries[0],
-      y1: rowBoundaries[0],
-      x2: colBoundaries[cols],
-      y2: rowBoundaries[rows],
-      rows,
-      cols,
-      cells,
-      hasHeader: rows >= 2,
-      confidence: 0,
-    };
+    candidates.push(current);
+    return candidates;
   }
 }

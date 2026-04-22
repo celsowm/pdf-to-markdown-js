@@ -92,7 +92,16 @@ export class TableTransformer implements MarkdownTransformer {
     };
 
     // Run all detectors via registry
-    const tables = this.registry.detectAll(elements, config);
+    let tables = this.registry.detectAll(elements, config);
+    
+    // Filter by confidence and minimum physical requirements
+    const minConfidenceThreshold = this.config.minConfidence ?? 0.4;
+    tables = tables.filter(t => {
+      if (t.cols < 2) return false; // Absolute requirement: at least 2 columns
+      
+      const confidence = this.registry.get(t.detectorName)?.getConfidence(t) ?? 0;
+      return confidence >= minConfidenceThreshold;
+    });
 
     if (tables.length === 0) {
       return { nodes: [], consumedElements: [] };
@@ -138,20 +147,35 @@ export class TableTransformer implements MarkdownTransformer {
 
     const nodes: MarkdownNode[] = [];
     const positions: number[] = [];
+    const trulyConsumedElements: TextElement[] = [];
+
     for (const assignment of tableAssignments.values()) {
-      const { node } = this.buildMarkdownTable(assignment.table, assignment.elements);
+      // Density check: skip if table is too sparse (less than 50% filled cells)
+      const filledCells = assignment.elements.length;
+      const totalCells = assignment.table.rows * assignment.table.cols;
+
+      // For small tables, require very high density (often false positives from paragraphs)
+      const minDensity = totalCells <= 12 ? 0.75 : 0.4;
+
+      if (filledCells / totalCells < minDensity) {
+        continue; // Don't consume these elements, let other transformers handle them
+      }
+
+      const { node, consumedElements } = this.buildMarkdownTable(assignment.table, assignment.elements);
       if (node) {
         nodes.push(node);
         const avgY = assignment.elements.reduce((sum, el) => sum + el.y, 0) / assignment.elements.length;
         positions.push(avgY);
+        trulyConsumedElements.push(...consumedElements);
       }
     }
 
     return {
       nodes,
-      consumedElements: allConsumedElements,
+      consumedElements: trulyConsumedElements,
       positions,
     };
+
   }
 
   /**
@@ -213,15 +237,46 @@ export class TableTransformer implements MarkdownTransformer {
     const cellContent = new Map<string, string>();
     const consumedElements: TextElement[] = [];
 
+    // Group elements by cell first
+    const cellGroups = new Map<string, TextElement[]>();
+
     for (const element of elements) {
       const cell = this.findElementCell(element, table);
       if (cell) {
         const key = `${cell.rowIndex}-${cell.colIndex}`;
-        const existing = cellContent.get(key) || '';
-        const separator = existing ? ' ' : '';
-        cellContent.set(key, existing + separator + element.text);
+        const group = cellGroups.get(key) || [];
+        group.push(element as TextElement);
+        cellGroups.set(key, group);
         consumedElements.push(element as TextElement);
       }
+    }
+
+    // Process each cell group to handle multi-line content
+    for (const [key, group] of cellGroups.entries()) {
+      // Sort elements in cell by Y (desc) then X (asc)
+      group.sort((a, b) => {
+        const yDiff = Math.abs(a.y - b.y);
+        if (yDiff > 2) {
+          return b.y - a.y;
+        }
+        return a.x - b.x;
+      });
+
+      let content = '';
+      for (let i = 0; i < group.length; i++) {
+        const el = group[i];
+        if (i > 0) {
+          const prev = group[i - 1];
+          const yDiff = Math.abs(el.y - prev.y);
+          if (yDiff > 2) {
+            content += '<br/>'; // Significant Y diff = new line in cell
+          } else {
+            content += ' ';
+          }
+        }
+        content += el.text;
+      }
+      cellContent.set(key, content);
     }
 
     return { cellContent, consumedElements };

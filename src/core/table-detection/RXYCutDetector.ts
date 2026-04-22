@@ -20,11 +20,11 @@
 import type {
   ITableDetector,
   DetectedTable,
-  TableCell,
   DetectionConfig,
   DetectorCategory,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import { TableUtils } from './TableUtils';
 
 /**
  * A spatial region with its child cuts.
@@ -90,6 +90,8 @@ export class RXYCutDetector implements ITableDetector {
   }
 
   getConfidence(table: DetectedTable): number {
+    if (table.cols < 2) return 0;
+    
     const expectedCells = table.rows * table.cols;
     const actualCells = table.cells.length;
     if (actualCells === 0) return 0;
@@ -249,68 +251,17 @@ export class RXYCutDetector implements ITableDetector {
     if (rows.length < config.minRows) return null;
 
     // Find consistent column positions across rows
-    const colPositions = this.findConsistentColumns(rows, config.tolerance, config.minCols);
+    const colBoundaries = TableUtils.findGutters(elements, config.tolerance);
 
-    if (colPositions.length < config.minCols) return null;
+    if (colBoundaries.length < config.minCols + 1) return null;
 
-    // Build cells
-    const cells: TableCell[] = [];
-    let hasAnyContent = false;
-
-    for (let r = 0; r < rows.length; r++) {
-      const rowY = rows[r][0]?.y ?? 0;
-      const nextRowY = r < rows.length - 1 ? (rows[r + 1][0]?.y ?? 0) : rowY - 20;
-
-      for (let c = 0; c < colPositions.length; c++) {
-        const x1 = colPositions[c];
-        const x2 = c < colPositions.length - 1 ? colPositions[c + 1] : x1 + 50;
-
-        // Check if any element falls in this cell
-        const cellElements = rows[r].filter(
-          (el) => el.x >= x1 - config.tolerance && el.x < x2 + config.tolerance,
-        );
-
-        if (cellElements.length > 0) {
-          hasAnyContent = true;
-        }
-
-        cells.push({
-          rowIndex: r,
-          colIndex: c,
-          x1,
-          y1: rowY,
-          x2,
-          y2: nextRowY,
-          content:
-            cellElements
-              .map((e) => e.text)
-              .join(' ')
-              .trim() || undefined,
-        });
-      }
-    }
-
-    if (!hasAnyContent) return null;
-
-    const x1 = Math.min(...colPositions);
-    const x2 = colPositions[colPositions.length - 1] + 50;
-    const yPositions = rows.map((r) => r[0]?.y ?? 0);
-    const y1 = Math.max(...yPositions);
-    const y2 = Math.min(...yPositions) - 20;
-
-    return {
-      id: `rxy-cut-${Date.now()}`,
-      detectorName: this.getName(),
-      x1,
-      y1,
-      x2,
-      y2,
-      rows: rows.length,
-      cols: colPositions.length,
-      cells,
-      hasHeader: rows.length >= 2,
-      confidence: 0,
-    };
+    return TableUtils.buildTableFromGrid(
+      `rxy-cut-${Date.now()}`,
+      this.getName(),
+      rows,
+      colBoundaries,
+      config
+    );
   }
 
   private groupElementsByY(elements: TextElement[], tolerance: number): TextElement[][] {
@@ -337,57 +288,6 @@ export class RXYCutDetector implements ITableDetector {
     }
 
     return rows;
-  }
-
-  private findConsistentColumns(
-    rows: TextElement[][],
-    tolerance: number,
-    minCols: number,
-  ): number[] {
-    // Collect all X positions
-    const allXPositions = rows.flatMap((row) => row.map((el) => el.x));
-    if (allXPositions.length === 0) return [];
-
-    // Cluster X positions
-    const clusters = this.clusterPositions(allXPositions, tolerance);
-
-    // Keep only clusters that appear in enough rows
-    const minRowCount = Math.max(2, Math.ceil(rows.length * 0.4));
-    const consistent = clusters.filter((clusterCenter) => {
-      let rowCount = 0;
-      for (const row of rows) {
-        if (row.some((el) => Math.abs(el.x - clusterCenter) <= tolerance * 3)) {
-          rowCount++;
-        }
-      }
-      return rowCount >= minRowCount;
-    });
-
-    consistent.sort((a, b) => a - b);
-    return consistent.length >= minCols ? consistent : [];
-  }
-
-  private clusterPositions(positions: number[], tolerance: number): number[] {
-    if (positions.length === 0) return [];
-
-    const sorted = [...positions].sort((a, b) => a - b);
-    const clusters: number[] = [];
-    let clusterSum = sorted[0];
-    let clusterCount = 1;
-
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] - sorted[i - 1] <= tolerance * 2) {
-        clusterSum += sorted[i];
-        clusterCount++;
-      } else {
-        clusters.push(clusterSum / clusterCount);
-        clusterSum = sorted[i];
-        clusterCount = 1;
-      }
-    }
-    clusters.push(clusterSum / clusterCount);
-
-    return clusters;
   }
 
   private computeRegularity(table: DetectedTable): number {

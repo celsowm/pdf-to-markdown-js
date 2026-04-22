@@ -14,11 +14,11 @@
 import type {
   ITableDetector,
   DetectedTable,
-  TableCell,
   DetectionConfig,
   DetectorCategory,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import { TableUtils } from './TableUtils';
 
 /**
  * Lattice detector implementation.
@@ -57,8 +57,19 @@ export class LatticeDetector implements ITableDetector {
 
       if (colPositions.length < config.minCols) continue;
 
+      // Build column boundaries
+      const flatElems = rows.flat();
+      const colBoundaries = TableUtils.findGutters(flatElems, config.tolerance);
+
       // Build table
-      const table = this.buildTable(rows, colPositions, config);
+      const table = TableUtils.buildTableFromGrid(
+        `lattice-${Date.now()}-${tables.length}`,
+        this.getName(),
+        rows,
+        colBoundaries,
+        config
+      );
+
       if (table) {
         tables.push(table);
       }
@@ -81,8 +92,6 @@ export class LatticeDetector implements ITableDetector {
       const currentRowY = rows[i][0].y;
       const gap = Math.abs(prevRowY - currentRowY);
 
-      // If gap is significantly larger than typical line height (e.g. > 3x tolerance)
-      // it's likely a different table or section
       if (gap > tolerance * 10) {
         candidates.push(currentCandidate);
         currentCandidate = [rows[i]];
@@ -96,6 +105,8 @@ export class LatticeDetector implements ITableDetector {
   }
 
   getConfidence(table: DetectedTable): number {
+    if (table.cols < 2) return 0;
+    
     // Confidence based on grid completeness
     const expectedCells = table.rows * table.cols;
     const actualCells = table.cells.length;
@@ -141,97 +152,16 @@ export class LatticeDetector implements ITableDetector {
     const allXPositions = rows.flatMap((row) => row.map((el) => el.x).sort((a, b) => a - b));
 
     // Cluster X positions
-    const clusters = this.clusterValues(allXPositions, tolerance);
+    const clusters = TableUtils.clusterValueRanges(allXPositions, tolerance);
 
     // Find clusters that appear in most rows
     const consistentClusters = clusters.filter((cluster) => {
       const rowsWithCluster = rows.filter((row) =>
-        row.some((el) => Math.abs(el.x - cluster) <= tolerance * 2),
+        row.some((el) => Math.abs(el.x - cluster.center) <= tolerance * 2),
       );
       return rowsWithCluster.length >= Math.ceil(rows.length * 0.5);
     });
 
-    return consistentClusters;
-  }
-
-  /**
-   * Clusters numeric values within tolerance.
-   */
-  private clusterValues(values: number[], tolerance: number): number[] {
-    if (values.length === 0) return [];
-
-    const sorted = [...values].sort((a, b) => a - b);
-    const clusters: number[] = [];
-    let currentCluster: number[] = [sorted[0]];
-
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] - currentCluster[0] <= tolerance) {
-        currentCluster.push(sorted[i]);
-      } else {
-        clusters.push(currentCluster.reduce((a, b) => a + b, 0) / currentCluster.length);
-        currentCluster = [sorted[i]];
-      }
-    }
-
-    if (currentCluster.length > 0) {
-      clusters.push(currentCluster.reduce((a, b) => a + b, 0) / currentCluster.length);
-    }
-
-    return clusters;
-  }
-
-  /**
-   * Builds a DetectedTable from rows and column positions.
-   */
-  private buildTable(
-    rows: TextElement[][],
-    colPositions: number[],
-    config: DetectionConfig,
-  ): DetectedTable | null {
-    if (rows.length < config.minRows || colPositions.length < config.minCols) {
-      return null;
-    }
-
-    const cells: TableCell[] = [];
-    // let cellIndex = 0;
-
-    for (let row = 0; row < rows.length; row++) {
-      for (let col = 0; col < colPositions.length; col++) {
-        const x1 = colPositions[col];
-        const x2 = col < colPositions.length - 1 ? colPositions[col + 1] : x1 + 50;
-        const y1 = rows[row][0]?.y || 0;
-        const y2 = row < rows.length - 1 ? rows[row + 1][0]?.y || 0 : y1 - 20;
-
-        cells.push({
-          rowIndex: row,
-          colIndex: col,
-          x1,
-          y1,
-          x2,
-          y2,
-        });
-
-        // cellIndex++;
-      }
-    }
-
-    const x1 = Math.min(...colPositions);
-    const x2 = Math.max(...colPositions);
-    const y1 = Math.max(...rows.map((r) => r[0]?.y || 0));
-    const y2 = Math.min(...rows.map((r) => r[0]?.y || 0));
-
-    return {
-      id: `lattice-${Date.now()}`,
-      detectorName: this.getName(),
-      x1,
-      y1,
-      x2,
-      y2,
-      rows: rows.length,
-      cols: colPositions.length,
-      cells,
-      hasHeader: rows.length >= 2,
-      confidence: 0, // Will be calculated by getConfidence
-    };
+    return consistentClusters.map(c => c.center);
   }
 }
