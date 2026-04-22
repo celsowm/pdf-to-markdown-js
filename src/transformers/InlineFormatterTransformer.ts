@@ -1,6 +1,7 @@
-import { TextElement } from '../models/TextElement';
-import { MarkdownNode, createTextNode, InlineFormatting } from '../models/MarkdownNode';
-import { MarkdownTransformer } from './MarkdownTransformer';
+import type { TextElement } from '../models/TextElement';
+import type { MarkdownNode, InlineFormatting } from '../models/MarkdownNode';
+import { createTextNode } from '../models/MarkdownNode';
+import type { MarkdownTransformer, TransformationResult } from './MarkdownTransformer';
 
 /**
  * Transformer that detects and applies inline formatting (bold, italic, strike).
@@ -16,7 +17,7 @@ export class InlineFormatterTransformer implements MarkdownTransformer {
     return elements.length > 0;
   }
 
-  transform(elements: TextElement[], _allElements: TextElement[]): MarkdownNode[] {
+  transform(elements: TextElement[], _allElements: TextElement[]): TransformationResult {
     const nodes: MarkdownNode[] = [];
 
     for (const element of elements) {
@@ -25,7 +26,7 @@ export class InlineFormatterTransformer implements MarkdownTransformer {
       nodes.push(textNode);
     }
 
-    return nodes;
+    return { nodes, consumedElements: elements };
   }
 
   /**

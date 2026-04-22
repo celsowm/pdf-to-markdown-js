@@ -42,7 +42,7 @@ endobj
 endobj
 8 0 obj
 <<
-/Author (\(anonymous\)) /CreationDate (D:20260421201015+00'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260421201015+00'00') /Producer (ReportLab PDF Library - \(opensource\))
+/Author (\(anonymous\)) /CreationDate (D:20260422183835-03'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260422183835-03'00') /Producer (ReportLab PDF Library - \(opensource\)) 
   /Subject (\(unspecified\)) /Title (\(anonymous\)) /Trapped /False
 >>
 endobj
@@ -213,7 +213,7 @@ q
 BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL (The converter should detect and properly convert all these formatting styles to their markdown) Tj T* (equivalents: **bold**, *italic*, and ~~strikethrough~~.) Tj T* ET
 Q
 Q
-
+ 
 endstream
 endobj
 xref
@@ -232,7 +232,7 @@ xref
 trailer
 <<
 /ID 
-[<cd4805f31c1ee13951f7830242292f99><cd4805f31c1ee13951f7830242292f99>]
+[<808b2c50bce849442047614297aaa8d9><808b2c50bce849442047614297aaa8d9>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 8 0 R

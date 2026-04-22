@@ -1,4 +1,4 @@
-export {
+export type {
   ITableDetector,
   DetectedTable,
   TableCell,
@@ -6,6 +6,9 @@ export {
   DetectorCategory,
   DetectorWeight,
   DetectorRegistryConfig,
+} from './TableTypes';
+
+export {
   DEFAULT_DETECTION_CONFIG,
   DEFAULT_REGISTRY_CONFIG,
 } from './TableTypes';

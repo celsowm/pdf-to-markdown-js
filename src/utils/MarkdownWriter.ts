@@ -1,4 +1,4 @@
-import {
+import type {
   MarkdownNode,
   HeadingNode,
   ListNode,
@@ -23,19 +23,19 @@ export class MarkdownWriter {
   private renderNode(node: MarkdownNode, depth: number): string {
     switch (node.type) {
       case 'document':
-        return this.renderDocument(node, depth);
+        return this.renderDocument(node);
       case 'heading':
-        return this.renderHeading(node as HeadingNode, depth);
+        return this.renderHeading(node as HeadingNode);
       case 'paragraph':
         return this.renderParagraph(node, depth);
       case 'text':
-        return this.renderText(node, depth);
+        return this.renderText(node);
       case 'list':
-        return this.renderList(node as ListNode, depth);
+        return this.renderList(node as ListNode);
       case 'table':
-        return this.renderTable(node as TableNode, depth);
+        return this.renderTable(node as TableNode);
       case 'codeBlock':
-        return this.renderCodeBlock(node, depth);
+        return this.renderCodeBlock(node);
       case 'blockquote':
         return this.renderBlockquote(node, depth);
       case 'horizontalRule':
@@ -50,14 +50,14 @@ export class MarkdownWriter {
   /**
    * Renders a document node.
    */
-  private renderDocument(node: MarkdownNode, _depth: number): string {
+  private renderDocument(node: MarkdownNode): string {
     return node.children.map((child) => this.renderNode(child, 0)).join('\n');
   }
 
   /**
    * Renders a heading node.
    */
-  private renderHeading(node: HeadingNode, _depth: number): string {
+  private renderHeading(node: HeadingNode): string {
     const prefix = '#'.repeat(node.level);
     return `${prefix} ${node.content}\n\n`;
   }
@@ -77,7 +77,7 @@ export class MarkdownWriter {
   /**
    * Renders a text node.
    */
-  private renderText(node: MarkdownNode, _depth: number): string {
+  private renderText(node: MarkdownNode): string {
     const content = node.content || '';
     const formatting = node.metadata?.formatting as InlineFormatting | undefined;
 
@@ -120,7 +120,7 @@ export class MarkdownWriter {
   /**
    * Renders a list node.
    */
-  private renderList(node: ListNode, _depth: number): string {
+  private renderList(node: ListNode): string {
     let result = '';
     let index = 1;
 
@@ -141,7 +141,7 @@ export class MarkdownWriter {
   /**
    * Renders a table node.
    */
-  private renderTable(node: TableNode, _depth: number): string {
+  private renderTable(node: TableNode): string {
     let result = '';
 
     // Header row
@@ -159,7 +159,7 @@ export class MarkdownWriter {
   /**
    * Renders a code block node.
    */
-  private renderCodeBlock(node: MarkdownNode, _depth: number): string {
+  private renderCodeBlock(node: MarkdownNode): string {
     const language = node.metadata?.language || '';
     return `\`\`\`${language}\n${node.content}\n\`\`\`\n\n`;
   }

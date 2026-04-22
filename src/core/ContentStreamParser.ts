@@ -1,3 +1,5 @@
+import { logger } from '../utils/Logger';
+
 /**
  * Represents a text positioning matrix.
  */
@@ -14,13 +16,23 @@ export interface TextMatrix {
  * Represents a parsed text operation from the content stream.
  */
 export interface TextOperation {
-  readonly type: 'text' | 'moveToNextLine' | 'setTextMatrix' | 'setFont' | 'lineWidth' | 'unknown';
+  readonly type:
+    | 'text'
+    | 'moveToNextLine'
+    | 'setTextMatrix'
+    | 'setFont'
+    | 'lineWidth'
+    | 'saveState'
+    | 'restoreState'
+    | 'concatenateMatrix'
+    | 'unknown';
   readonly text?: string;
   readonly matrix?: TextMatrix;
   readonly fontName?: string;
   readonly fontSize?: number;
   readonly x?: number;
   readonly y?: number;
+  readonly relative?: boolean;
 }
 
 /**
@@ -36,20 +48,18 @@ export const IDENTITY_MATRIX: TextMatrix = {
 };
 
 /**
- * Parses PDF content streams to extract text operations.
- * Handles PDF text positioning operators as per PDF Reference Section 9.
+ * Robust parser for PDF content streams.
+ * Handles the postfix notation of PDF operators.
  */
 export class ContentStreamParser {
   private readonly streamContent: string;
   private position: number = 0;
+  private stack: any[] = [];
 
   constructor(streamContent: string) {
     this.streamContent = streamContent;
   }
 
-  /**
-   * Parses the content stream and returns text operations.
-   */
   parse(): TextOperation[] {
     const operations: TextOperation[] = [];
     let currentFontName: string | undefined;
@@ -57,45 +67,35 @@ export class ContentStreamParser {
 
     while (this.position < this.streamContent.length) {
       this.skipWhitespace();
+      if (this.position >= this.streamContent.length) break;
 
-      if (this.position >= this.streamContent.length) {
-        break;
-      }
+      const char = this.streamContent[this.position];
 
-      // Try to parse text showing operators (Tj, TJ, ', ")
-      const textOperation = this.tryParseTextOperator(currentFontName, currentFontSize);
-      if (textOperation) {
-        operations.push(textOperation);
-        continue;
-      }
-
-      // Try to parse text matrix operator (Tm)
-      const matrixOperation = this.tryParseTextMatrix();
-      if (matrixOperation) {
-        operations.push(matrixOperation);
-        continue;
-      }
-
-      // Try to parse font operator (Tf)
-      const fontOperation = this.tryParseFontOperator();
-      if (fontOperation) {
-        currentFontName = fontOperation.fontName;
-        currentFontSize = fontOperation.fontSize;
-        operations.push(fontOperation);
-        continue;
-      }
-
-      // Try to parse text line move operators (T*, TD, TD, TL)
-      const lineOperation = this.tryParseTextLineMove();
-      if (lineOperation) {
-        operations.push(lineOperation);
-        continue;
-      }
-
-      // Skip unknown content until next operator
-      const prevPos = this.position;
-      this.skipUntilOperator();
-      if (this.position === prevPos) {
+      if (char === '(') {
+        this.stack.push(this.parseParenthesizedString());
+      } else if (char === '[') {
+        this.stack.push(this.parseArray());
+      } else if (char === '<') {
+        if (this.streamContent[this.position + 1] === '<') {
+           this.skipDictionary();
+        } else {
+           this.stack.push(this.parseHexString());
+        }
+      } else if (this.isNumberStart(char)) {
+        this.stack.push(this.parseNumber());
+      } else if (char === '/') {
+        this.stack.push(this.parseName());
+      } else if (this.isOperatorStart(char)) {
+        const op = this.parseOperator();
+        const result = this.handleOperator(op, currentFontName, currentFontSize);
+        if (result) {
+          if (result.type === 'setFont') {
+            currentFontName = result.fontName;
+            currentFontSize = result.fontSize;
+          }
+          operations.push(result);
+        }
+      } else {
         this.position++;
       }
     }
@@ -103,294 +103,255 @@ export class ContentStreamParser {
     return operations;
   }
 
-  /**
-   * Skips whitespace characters.
-   */
   private skipWhitespace(): void {
     while (this.position < this.streamContent.length) {
       const char = this.streamContent[this.position];
-      if (char === ' ' || char === '\t' || char === '\n' || char === '\r') {
+      if (char === ' ' || char === '\t' || char === '\n' || char === '\r' || char === '\f' || char === '\0') {
         this.position++;
+      } else if (char === '%') {
+        this.skipComment();
       } else {
         break;
       }
     }
   }
 
-  /**
-   * Tries to parse text showing operators: Tj, TJ, ', "
-   */
-  private tryParseTextOperator(
-    fontName: string | undefined,
-    fontSize: number | undefined,
-  ): TextOperation | null {
-    const startPosition = this.position;
-
-    // Skip to find potential text operator
-    this.skipUntilPotentialTextOperator();
-
-    if (this.position >= this.streamContent.length) {
-      this.position = startPosition;
-      return null;
+  private skipComment(): void {
+    while (this.position < this.streamContent.length) {
+      const char = this.streamContent[this.position];
+      this.position++;
+      if (char === '\n' || char === '\r') break;
     }
-
-    // Check for TJ (array of strings)
-    if (this.streamContent[this.position] === '[') {
-      const text = this.parseTJOperator();
-      if (text !== null) {
-        return {
-          type: 'text',
-          text,
-          fontName,
-          fontSize,
-        };
-      }
-      this.position = startPosition;
-      return null;
-    }
-
-    // Check for Tj (string)
-    if (this.streamContent[this.position] === '(') {
-      const text = this.parseParenthesizedString();
-      this.skipWhitespace();
-      if (
-        text !== null &&
-        this.position < this.streamContent.length &&
-        this.streamContent[this.position] === 'T' &&
-        this.streamContent[this.position + 1] === 'j'
-      ) {
-        this.position++; // Skip T
-        this.position++; // Skip j
-        return {
-          type: 'text',
-          text,
-          fontName,
-          fontSize,
-        };
-      }
-      this.position = startPosition;
-      return null;
-    }
-
-    this.position = startPosition;
-    return null;
   }
 
-  /**
-   * Parses a TJ operator (array of strings with positioning).
-   */
-  private parseTJOperator(): string | null {
-    if (this.streamContent[this.position] !== '[') {
-      return null;
-    }
+  private isNumberStart(char: string): boolean {
+    return (char >= '0' && char <= '9') || char === '-' || char === '+' || char === '.';
+  }
 
-    this.position++; // Skip [
-    let result = '';
-    let bracketCount = 1;
-
-    while (this.position < this.streamContent.length && bracketCount > 0) {
+  private parseNumber(): number {
+    let str = '';
+    while (this.position < this.streamContent.length) {
       const char = this.streamContent[this.position];
-
-      if (char === '(') {
-        const text = this.parseParenthesizedString();
-        if (text !== null) {
-          result += text;
-        }
-      } else if (char === '[') {
-        bracketCount++;
-        this.position++;
-      } else if (char === ']') {
-        bracketCount--;
+      if (this.isNumberStart(char)) {
+        str += char;
         this.position++;
       } else {
-        this.position++;
+        break;
       }
     }
-
-    // Skip TJ
-    if (
-      this.position < this.streamContent.length &&
-      this.streamContent[this.position] === 'T' &&
-      this.streamContent[this.position + 1] === 'J'
-    ) {
-      this.position += 2;
-      return result;
-    }
-
-    return result || null;
+    return parseFloat(str);
   }
 
-  /**
-   * Parses a parenthesized string.
-   */
-  private parseParenthesizedString(): string | null {
-    if (this.streamContent[this.position] !== '(') {
-      return null;
+  private parseName(): string {
+    this.position++; // skip /
+    let name = '';
+    while (this.position < this.streamContent.length) {
+      const char = this.streamContent[this.position];
+      if (this.isWhitespace(char) || '()<>[]{}/%'.includes(char)) break;
+      name += char;
+      this.position++;
     }
+    return name;
+  }
 
-    this.position++; // Skip (
+  private isWhitespace(char: string): boolean {
+    return ' \t\n\r\f\0'.includes(char);
+  }
+
+  private parseParenthesizedString(): string {
+    this.position++; // skip (
     let result = '';
     let depth = 1;
-
     while (this.position < this.streamContent.length && depth > 0) {
       const char = this.streamContent[this.position];
-
       if (char === '\\') {
         this.position++;
-        const nextChar = this.streamContent[this.position];
-        switch (nextChar) {
-          case 'n':
-            result += '\n';
-            break;
-          case 'r':
-            result += '\r';
-            break;
-          case 't':
-            result += '\t';
-            break;
-          case '(':
-            result += '(';
-            break;
-          case ')':
-            result += ')';
-            break;
-          case '\\':
-            result += '\\';
-            break;
-          default:
-            result += nextChar;
-        }
+        const next = this.streamContent[this.position];
+        if (next === 'n') result += '\n';
+        else if (next === 'r') result += '\r';
+        else if (next === 't') result += '\t';
+        else if (next === '(' || next === ')' || next === '\\') result += next;
+        else result += next;
       } else if (char === '(') {
         depth++;
         result += char;
       } else if (char === ')') {
         depth--;
-        if (depth > 0) {
-          result += char;
-        }
+        if (depth > 0) result += char;
       } else {
         result += char;
       }
-
       this.position++;
     }
-
     return result;
   }
 
-  /**
-   * Tries to parse text matrix operator (Tm).
-   */
-  private tryParseTextMatrix(): TextOperation | null {
-    // Look for pattern: number number number number number number Tm
-    const tmPattern =
-      /([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+Tm/;
-    const substring = this.streamContent.substring(this.position);
-    const match = tmPattern.exec(substring);
-
-    if (match) {
-      this.position += match[0].length;
-      return {
-        type: 'setTextMatrix',
-        matrix: {
-          a: parseFloat(match[1]),
-          b: parseFloat(match[2]),
-          c: parseFloat(match[3]),
-          d: parseFloat(match[4]),
-          e: parseFloat(match[5]),
-          f: parseFloat(match[6]),
-        },
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * Tries to parse font operator (Tf).
-   */
-  private tryParseFontOperator(): TextOperation | null {
-    const startPosition = this.position;
-
-    // Look for pattern: /FontName Size Tf
-    const tfPattern = /\/(\S+)\s+([+-]?\d*\.?\d+)\s+Tf/;
-    const substring = this.streamContent.substring(this.position);
-    const match = tfPattern.exec(substring);
-
-    if (match) {
-      this.position += match[0].length;
-      return {
-        type: 'setFont',
-        fontName: match[1],
-        fontSize: parseFloat(match[2]),
-      };
-    }
-
-    this.position = startPosition;
-    return null;
-  }
-
-  /**
-   * Tries to parse text line move operators (T*, TD, TD, TL).
-   */
-  private tryParseTextLineMove(): TextOperation | null {
-    const startPosition = this.position;
-
-    // T* - move to next line
-    if (this.streamContent.substring(this.position, this.position + 2) === 'T*') {
-      this.position += 2;
-      return { type: 'moveToNextLine' };
-    }
-
-    // TL - set text leading
-    const tlPattern = /([+-]?\d*\.?\d+)\s+TL/;
-    const tlMatch = tlPattern.exec(this.streamContent.substring(this.position));
-    if (tlMatch) {
-      this.position += tlMatch[0].length;
-      return { type: 'moveToNextLine' };
-    }
-
-    // TD or Td - move to next line and offset
-    const tdPattern = /([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s+T[Dd]/;
-    const tdMatch = tdPattern.exec(this.streamContent.substring(this.position));
-    if (tdMatch) {
-      this.position += tdMatch[0].length;
-      return {
-        type: 'moveToNextLine',
-        x: parseFloat(tdMatch[1]),
-        y: parseFloat(tdMatch[2]),
-      };
-    }
-
-    this.position = startPosition;
-    return null;
-  }
-
-  /**
-   * Skips content until a potential text operator is found.
-   */
-  private skipUntilPotentialTextOperator(): void {
+  private parseHexString(): string {
+    this.position++; // skip <
+    let hex = '';
     while (this.position < this.streamContent.length) {
       const char = this.streamContent[this.position];
-      // Look for ( or [ which indicates text content
-      if (char === '(' || char === '[') {
-        return;
+      if (char === '>') {
+        this.position++;
+        break;
       }
+      if (/[0-9a-fA-F]/.test(char)) hex += char;
       this.position++;
+    }
+    // Simple hex to string
+    let result = '';
+    for (let i = 0; i < hex.length; i += 2) {
+      const hexCode = hex.substring(i, i + 2);
+      const charCode = parseInt(hexCode, 16);
+      if (!isNaN(charCode)) {
+        result += String.fromCharCode(charCode);
+      }
+    }
+    return result;
+  }
+
+  private parseArray(): any[] {
+    this.position++; // skip [
+    const arr: any[] = [];
+    while (this.position < this.streamContent.length) {
+      this.skipWhitespace();
+      if (this.streamContent[this.position] === ']') {
+        this.position++;
+        break;
+      }
+      const char = this.streamContent[this.position];
+      if (char === '(') arr.push(this.parseParenthesizedString());
+      else if (this.isNumberStart(char)) arr.push(this.parseNumber());
+      else if (char === '[') arr.push(this.parseArray());
+      else if (char === '/') arr.push(this.parseName());
+      else this.position++;
+    }
+    return arr;
+  }
+
+  private skipDictionary(): void {
+    this.position += 2; // skip <<
+    let depth = 1;
+    while (this.position < this.streamContent.length && depth > 0) {
+      if (this.streamContent.startsWith('<<', this.position)) {
+        depth++;
+        this.position += 2;
+      } else if (this.streamContent.startsWith('>>', this.position)) {
+        depth--;
+        this.position += 2;
+      } else {
+        this.position++;
+      }
     }
   }
 
-  /**
-   * Skips content until the next operator.
-   */
-  private skipUntilOperator(): void {
+  private isOperatorStart(char: string): boolean {
+    return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char === '*' || char === "'" || char === '"';
+  }
+
+  private parseOperator(): string {
+    let op = '';
     while (this.position < this.streamContent.length) {
       const char = this.streamContent[this.position];
-      // Operators are typically uppercase letters at word boundaries
-      if (char >= 'A' && char <= 'Z') {
-        return;
+      if (this.isOperatorStart(char)) {
+        op += char;
+        this.position++;
+      } else {
+        break;
       }
-      this.position++;
+    }
+    return op;
+  }
+
+  private handleOperator(op: string, fontName?: string, fontSize?: number): TextOperation | null {
+    try {
+      switch (op) {
+        case 'BT':
+          this.stack = [];
+          return null;
+        case 'ET':
+          this.stack = [];
+          return null;
+        case 'Tf': {
+          const size = this.stack.pop();
+          const name = this.stack.pop();
+          return { type: 'setFont', fontName: String(name), fontSize: Number(size) };
+        }
+        case 'Tm': {
+          const f = this.stack.pop();
+          const e = this.stack.pop();
+          const d = this.stack.pop();
+          const c = this.stack.pop();
+          const b = this.stack.pop();
+          const a = this.stack.pop();
+          return { type: 'setTextMatrix', matrix: { a, b, c, d, e, f } };
+        }
+        case 'Td': {
+          const y = this.stack.pop();
+          const x = this.stack.pop();
+          return { type: 'moveToNextLine', x, y, relative: true };
+        }
+        case 'TD': {
+          const y = this.stack.pop();
+          const x = this.stack.pop();
+          // TD also sets leading, but for text position it's like Td
+          return { type: 'moveToNextLine', x, y, relative: true };
+        }
+        case 'T*':
+          return { type: 'moveToNextLine', x: 0, y: -1, relative: true }; // -1 is a guess for leading
+        case 'TL':
+          this.stack.pop(); // skip leading
+          return { type: 'moveToNextLine' };
+        case 'Tj': {
+          const text = this.stack.pop();
+          return { type: 'text', text: String(text), fontName, fontSize };
+        }
+        case 'TJ': {
+          const arr = this.stack.pop();
+          let text = '';
+          if (Array.isArray(arr)) {
+            for (const item of arr) {
+              if (typeof item === 'string') text += item;
+            }
+          }
+          return { type: 'text', text, fontName, fontSize };
+        }
+        case "'": {
+          const text = this.stack.pop();
+          return { type: 'text', text: String(text), fontName, fontSize };
+        }
+        case '"': {
+          const text = this.stack.pop();
+          this.stack.pop(); // skip w
+          this.stack.pop(); // skip ac
+          return { type: 'text', text: String(text), fontName, fontSize };
+        }
+        case 'cm': {
+          const f = this.stack.pop();
+          const e = this.stack.pop();
+          const d = this.stack.pop();
+          const c = this.stack.pop();
+          const b = this.stack.pop();
+          const a = this.stack.pop();
+          return { type: 'concatenateMatrix', matrix: { a, b, c, d, e, f } };
+        }
+        case 'q':
+          return { type: 'saveState' };
+        case 'Q':
+          return { type: 'restoreState' };
+        default:
+          // For now we don't log every single unknown operator to avoid spam
+          // but we clear the stack to keep it healthy
+          if (op.length > 0) {
+             logger.verbose(`Operator ${op} ignored, stack cleared`);
+          }
+          this.stack = []; 
+          return null;
+      }
+    } catch (e) {
+      logger.debug(`Error handling operator ${op}:`, e);
+      this.stack = [];
+      return null;
     }
   }
 }

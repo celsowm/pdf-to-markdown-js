@@ -17,14 +17,14 @@
  * - DIP: Depends on ITableDetector abstraction
  */
 
-import {
+import type {
   ITableDetector,
   DetectedTable,
   TableCell,
   DetectionConfig,
   DetectorCategory,
 } from './TableTypes';
-import { TextElement } from '../../models/TextElement';
+import type { TextElement } from '../../models/TextElement';
 
 /**
  * Represents a histogram bin with its properties.

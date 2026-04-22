@@ -8,16 +8,17 @@
  * - SRP: Only manages detector lifecycle
  */
 
-import {
+import type {
   ITableDetector,
   DetectedTable,
   DetectionConfig,
-  DEFAULT_DETECTION_CONFIG,
   DetectorWeight,
-  DetectorRegistryConfig,
+  DetectorRegistryConfig} from './TableTypes';
+import {
+  DEFAULT_DETECTION_CONFIG,
   DEFAULT_REGISTRY_CONFIG,
 } from './TableTypes';
-import { TextElement } from '../../models/TextElement';
+import type { TextElement } from '../../models/TextElement';
 
 // Import all detectors
 import { LatticeDetector } from './LatticeDetector';
@@ -107,11 +108,60 @@ export class DetectorRegistry {
     // Sort by confidence (highest first)
     allTables.sort((a, b) => b.confidence - a.confidence);
 
+    // Deduplicate overlapping tables
+    const deduplicated = this.mergeOverlappingTables(allTables);
+
     // Filter by minimum confidence
-    const filtered = allTables.filter((t) => t.confidence >= this.config.minConfidence);
+    const filtered = deduplicated.filter((t) => t.confidence >= this.config.minConfidence);
 
     // Limit to max tables
     return filtered.slice(0, this.config.maxTables);
+  }
+
+  /**
+   * Merges or removes overlapping tables to prevent duplicates.
+   */
+  private mergeOverlappingTables(tables: DetectedTable[]): DetectedTable[] {
+    if (tables.length <= 1) return tables;
+
+    const result: DetectedTable[] = [];
+    const used = new Set<number>();
+
+    for (let i = 0; i < tables.length; i++) {
+      if (used.has(i)) continue;
+
+      const base = tables[i];
+      result.push(base);
+      used.add(i);
+
+      for (let j = i + 1; j < tables.length; j++) {
+        if (used.has(j)) continue;
+
+        if (this.tablesOverlapSignificantly(base, tables[j])) {
+          used.add(j);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Checks if two tables overlap significantly.
+   */
+  private tablesOverlapSignificantly(a: DetectedTable, b: DetectedTable): boolean {
+    const xOverlap = Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1));
+    const yOverlap = Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y2, b.y2)); // PDF Y inverted (y1 > y2)
+
+    const overlapArea = xOverlap * yOverlap;
+    const aArea = (a.x2 - a.x1) * (a.y1 - a.y2);
+    const bArea = (b.x2 - b.x1) * (b.y1 - b.y2);
+
+    const minArea = Math.min(aArea, bArea);
+    if (minArea === 0) return false;
+
+    // If more than 70% of the smaller table is covered by the larger one, they are likely duplicates
+    return overlapArea / minArea > 0.7;
   }
 
   /**

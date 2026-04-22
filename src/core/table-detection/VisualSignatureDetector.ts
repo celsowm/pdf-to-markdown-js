@@ -15,14 +15,14 @@
  * 5. Support user-defined templates via config
  */
 
-import {
+import type {
   ITableDetector,
   DetectedTable,
   TableCell,
   DetectionConfig,
   DetectorCategory,
 } from './TableTypes';
-import { TextElement } from '../../models/TextElement';
+import type { TextElement } from '../../models/TextElement';
 
 /**
  * Predefined table template with expected bitmask and extraction region.
@@ -72,7 +72,7 @@ const INVOICE_TEMPLATE: TableTemplate = {
   gridWidth: 50,
   gridHeight: 70,
   // Simplified invoice bitmask: header top, table in middle, totals at bottom
-  bitmask: (() => {
+  bitmask: ((): number[][] => {
     const grid: number[][] = [];
     for (let y = 0; y < 70; y++) {
       const row: number[] = [];
@@ -111,7 +111,7 @@ const RECEIPT_TEMPLATE: TableTemplate = {
   name: 'receipt',
   gridWidth: 50,
   gridHeight: 70,
-  bitmask: (() => {
+  bitmask: ((): number[][] => {
     const grid: number[][] = [];
     for (let y = 0; y < 70; y++) {
       const row: number[] = [];
@@ -151,7 +151,7 @@ const FORM_TEMPLATE: TableTemplate = {
   name: 'form',
   gridWidth: 50,
   gridHeight: 70,
-  bitmask: (() => {
+  bitmask: ((): number[][] => {
     const grid: number[][] = [];
     for (let y = 0; y < 70; y++) {
       const row: number[] = [];

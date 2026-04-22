@@ -1,6 +1,4 @@
-/**
- * PDF to Markdown Playground Application
- */
+import { PdfToMarkdown } from '@lib/index';
 
 (function() {
   'use strict';

@@ -1,4 +1,4 @@
-import { TextElement } from './TextElement';
+import type { TextElement } from './TextElement';
 
 /**
  * Represents a single page in a PDF document.

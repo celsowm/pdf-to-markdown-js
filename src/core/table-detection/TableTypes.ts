@@ -3,7 +3,7 @@
  * Following SOLID: Interface Segregation + Dependency Inversion
  */
 
-import { TextElement } from '../../models/TextElement';
+import type { TextElement } from '../../models/TextElement';
 
 /**
  * Represents a cell in a detected table.

@@ -11,14 +11,14 @@
  * - DIP: Depends on ITableDetector abstraction
  */
 
-import {
+import type {
   ITableDetector,
   DetectedTable,
   TableCell,
   DetectionConfig,
   DetectorCategory,
 } from './TableTypes';
-import { TextElement } from '../../models/TextElement';
+import type { TextElement } from '../../models/TextElement';
 
 /**
  * Lattice detector implementation.
@@ -37,33 +37,62 @@ export class LatticeDetector implements ITableDetector {
   }
 
   detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig): DetectedTable[] {
-    // Lattice requires access to raw PDF content stream for line operators
-    // This detector works best when we parse PDF graphics operators
-    // For now, we simulate detection from text alignment patterns
+    if (elements.length < config.minRows * config.minCols) {
+      return [];
+    }
 
     const tables: DetectedTable[] = [];
 
     // Group elements by row
-    const rows = this.groupByYPosition(elements, config.tolerance);
+    const allRows = this.groupByYPosition(elements, config.tolerance);
 
-    if (rows.length < config.minRows) {
-      return [];
-    }
+    // Partition rows into separate table candidates based on gaps
+    const tableCandidates = this.partitionRows(allRows, config.tolerance);
 
-    // Check if rows have consistent column alignment
-    const colPositions = this.findCommonColumnPositions(rows, config.tolerance);
+    for (const rows of tableCandidates) {
+      if (rows.length < config.minRows) continue;
 
-    if (colPositions.length < config.minCols) {
-      return [];
-    }
+      // Check if rows have consistent column alignment
+      const colPositions = this.findCommonColumnPositions(rows, config.tolerance);
 
-    // Build table
-    const table = this.buildTable(rows, colPositions, config);
-    if (table) {
-      tables.push(table);
+      if (colPositions.length < config.minCols) continue;
+
+      // Build table
+      const table = this.buildTable(rows, colPositions, config);
+      if (table) {
+        tables.push(table);
+      }
     }
 
     return tables;
+  }
+
+  /**
+   * Partitions rows into multiple table candidates based on vertical gaps.
+   */
+  private partitionRows(rows: TextElement[][], tolerance: number): TextElement[][][] {
+    if (rows.length === 0) return [];
+
+    const candidates: TextElement[][][] = [];
+    let currentCandidate: TextElement[][] = [rows[0]];
+
+    for (let i = 1; i < rows.length; i++) {
+      const prevRowY = rows[i - 1][0].y;
+      const currentRowY = rows[i][0].y;
+      const gap = Math.abs(prevRowY - currentRowY);
+
+      // If gap is significantly larger than typical line height (e.g. > 3x tolerance)
+      // it's likely a different table or section
+      if (gap > tolerance * 10) {
+        candidates.push(currentCandidate);
+        currentCandidate = [rows[i]];
+      } else {
+        currentCandidate.push(rows[i]);
+      }
+    }
+
+    candidates.push(currentCandidate);
+    return candidates;
   }
 
   getConfidence(table: DetectedTable): number {

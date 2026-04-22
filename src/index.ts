@@ -7,8 +7,8 @@ import {
   ParagraphTransformer,
   InlineFormatterTransformer,
   TableTransformer,
-  TableTransformerConfig,
 } from './transformers';
+import type { TableTransformerConfig } from './transformers';
 
 /**
  * Configuration options for PdfToMarkdown.
@@ -95,7 +95,6 @@ export class PdfToMarkdown {
     const transformers = [
       new HeadingTransformer(),
       new TableTransformer(options.table),
-      new InlineFormatterTransformer(),
       new ListTransformer(),
       new ParagraphTransformer(),
     ];
@@ -114,16 +113,11 @@ export class PdfToMarkdown {
 export { PdfReader } from './utils/PdfReader';
 export { PdfParser } from './core/PdfParser';
 export { MarkdownWriter } from './utils/MarkdownWriter';
-export { TextElement } from './models/TextElement';
-export { Page, createPage } from './models/Page';
-export { PdfDocument, createPdfDocument } from './models/PdfDocument';
+export type { Page } from './models/Page';
+export { createPage } from './models/Page';
+export type { PdfDocument } from './models/PdfDocument';
+export { createPdfDocument } from './models/PdfDocument';
 export {
-  MarkdownNode,
-  MarkdownNodeType,
-  HeadingNode,
-  ParagraphNode,
-  ListNode,
-  TableNode,
   createDocumentNode,
   createHeadingNode,
   createParagraphNode,
@@ -131,22 +125,41 @@ export {
   createListNode,
   createTableNode,
 } from './models/MarkdownNode';
-export { MarkdownTransformer } from './transformers/MarkdownTransformer';
+
+export type { TextElement } from './models/TextElement';
+export type {
+  MarkdownNode,
+  MarkdownNodeType,
+  HeadingNode,
+  ParagraphNode,
+  ListNode,
+  TableNode,
+} from './models/MarkdownNode';
+
 export { HeadingTransformer } from './transformers/HeadingTransformer';
 export { ListTransformer } from './transformers/ListTransformer';
 export { ParagraphTransformer } from './transformers/ParagraphTransformer';
 export { InlineFormatterTransformer } from './transformers/InlineFormatterTransformer';
-export { TableTransformer, TableTransformerConfig } from './transformers/TableTransformer';
+export { TableTransformer } from './transformers/TableTransformer';
+export type { TableTransformerConfig } from './transformers/TableTransformer';
+
 export {
-  ITableDetector,
   DetectorRegistry,
   createStandardRegistry,
-  DetectorCategory,
-  DetectionConfig,
 } from './core/table-detection';
-export { LatticeDetector, LatticeConfig, DEFAULT_LATTICE_CONFIG } from './core/LatticeDetector';
+
+export type {
+  ITableDetector,
+  DetectionConfig,
+  DetectorCategory,
+} from './core/table-detection';
+
+export { LatticeDetector, DEFAULT_LATTICE_CONFIG } from './core/LatticeDetector';
+export type { LatticeConfig } from './core/LatticeDetector';
+
 export { TableExtractor } from './core/TableExtractor';
-export { FontRegistry, FontCharacteristics, FontWeight, FontStyle } from './utils/FontRegistry';
+export { FontRegistry, FontWeight, FontStyle } from './utils/FontRegistry';
+export type { FontCharacteristics } from './utils/FontRegistry';
 
 // Default export
 export default PdfToMarkdown;

@@ -1,32 +1,13 @@
-export { Tokenizer, TokenType, Token } from './Tokenizer';
-export {
-  ObjectParser,
-  PdfObject,
-  PdfDictionary,
-  PdfArray,
-  PdfStream,
-  IndirectReference,
-} from './ObjectParser';
-export {
-  ContentStreamParser,
-  TextOperation,
-  TextMatrix,
-  IDENTITY_MATRIX,
-} from './ContentStreamParser';
+export type { Token } from './Tokenizer';
+export { Tokenizer, TokenType } from './Tokenizer';
+export type { PdfObject, PdfDictionary, PdfArray, PdfStream, IndirectReference } from './ObjectParser';
+export { ObjectParser } from './ObjectParser';
+export type { TextOperation, TextMatrix } from './ContentStreamParser';
+export { ContentStreamParser, IDENTITY_MATRIX } from './ContentStreamParser';
 export { TextExtractor } from './TextExtractor';
 export { PdfParser } from './PdfParser';
-export {
-  LatticeDetector,
-  DetectedTable,
-  LatticeConfig,
-  DEFAULT_LATTICE_CONFIG,
-} from './LatticeDetector';
+export type { DetectedTable, LatticeConfig } from './LatticeDetector';
+export { LatticeDetector, DEFAULT_LATTICE_CONFIG } from './LatticeDetector';
 export { TableExtractor } from './TableExtractor';
-export {
-  ITableDetector,
-  DetectedTable as DetectedTableV2,
-  DetectionConfig,
-  DetectorCategory,
-  DetectorRegistry,
-  createStandardRegistry,
-} from './table-detection';
+export type { ITableDetector, DetectedTable as DetectedTableV2, DetectionConfig, DetectorCategory } from './table-detection';
+export { DetectorRegistry, createStandardRegistry } from './table-detection';

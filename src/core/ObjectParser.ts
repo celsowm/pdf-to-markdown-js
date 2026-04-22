@@ -1,4 +1,8 @@
-import { Token, TokenType, Tokenizer } from './Tokenizer';
+import type { Token} from './Tokenizer';
+import { TokenType, Tokenizer } from './Tokenizer';
+import { Decompressor } from '../utils/Decompressor';
+import { Ascii85 } from '../utils/Ascii85';
+import { logger } from '../utils/Logger';
 
 /**
  * Represents a PDF object reference (indirect reference).
@@ -52,19 +56,22 @@ export type PdfObject =
  */
 export class ObjectParser {
   private readonly tokens: Token[];
+  private readonly rawBuffer: Buffer;
   private position: number = 0;
 
-  constructor(tokens: Token[]) {
+  constructor(tokens: Token[], rawBuffer: Buffer) {
     this.tokens = tokens;
+    this.rawBuffer = rawBuffer;
   }
 
   /**
-   * Parses PDF object content from raw string.
+   * Parses PDF object content from raw string or Buffer.
    */
-  static parseContent(content: string): PdfObject {
-    const tokenizer = new Tokenizer(content);
+  static parseContent(content: string | Buffer): PdfObject {
+    const buffer = typeof content === 'string' ? Buffer.from(content, 'binary') : content;
+    const tokenizer = new Tokenizer(buffer.toString('binary'));
     const tokens = tokenizer.tokenize();
-    const parser = new ObjectParser(tokens);
+    const parser = new ObjectParser(tokens, buffer);
     return parser.parseObject();
   }
 
@@ -202,60 +209,99 @@ export class ObjectParser {
    * Handles a dictionary that is followed by a stream.
    */
   private handleStreamDictionary(dict: PdfDictionary): PdfStream {
-    this.position++; // Skip stream keyword
+    const streamToken = this.tokens[this.position];
+    this.position++; // skip 'stream' keyword
 
-    // Collect stream content until endstream
-    let streamContent = '';
-    while (this.position < this.tokens.length) {
-      const token = this.tokens[this.position];
+    let offset = streamToken.charOffset + 6; // length of 'stream'
 
-      if (token.type === TokenType.ENDSTREAM) {
-        this.position++;
-        return {
-          type: 'stream',
-          dictionary: dict,
-          content: streamContent,
-        };
-      }
+    // Skip the newline after 'stream' (can be \n or \r\n)
+    if (this.rawBuffer[offset] === 0x0d && this.rawBuffer[offset + 1] === 0x0a) {
+      offset += 2;
+    } else if (this.rawBuffer[offset] === 0x0a) {
+      offset += 1;
+    }
 
-      // Add spaces back for non-string tokens to maintain structure, mostly for content streams
-      if (
-        streamContent.length > 0 &&
-        token.type !== TokenType.STRING &&
-        token.type !== TokenType.ARRAY_END &&
-        token.type !== TokenType.ARRAY_START
-      ) {
-        streamContent += ' ';
-      }
+    // Get length from dictionary
+    let length = 0;
+    const lengthObj = dict.entries.get('Length') || dict.entries.get('/Length');
+    if (lengthObj && lengthObj.type === 'number') {
+      length = lengthObj.value;
+    }
 
-      if (token.type === TokenType.NAME) {
-        streamContent += '/' + String(token.value);
-      } else if (token.type === TokenType.STRING) {
-        const val = String(token.value)
-          .replace(/\\/g, '\\\\')
-          .replace(/\(/g, '\\(')
-          .replace(/\)/g, '\\)');
-        streamContent += '(' + val + ')';
-      } else if (token.type === TokenType.ARRAY_START) {
-        streamContent += '[';
-      } else if (token.type === TokenType.ARRAY_END) {
-        streamContent += ']';
-      } else if (token.type === TokenType.HEX_STRING) {
-        streamContent += '<' + String(token.value) + '>';
+    let streamData: Buffer;
+    if (length > 0) {
+      streamData = this.rawBuffer.subarray(offset, offset + length);
+    } else {
+      // Manual endstream search
+      const searchBuffer = this.rawBuffer.subarray(offset);
+      const endstreamMarker = Buffer.from('endstream');
+      const endstreamIndex = searchBuffer.indexOf(endstreamMarker);
+      
+      if (endstreamIndex !== -1) {
+        streamData = searchBuffer.subarray(0, endstreamIndex);
+        // Trim trailing newline
+        if (streamData.length > 0) {
+          if (streamData[streamData.length - 1] === 0x0a) {
+            if (streamData[streamData.length - 2] === 0x0d) {
+              streamData = streamData.subarray(0, streamData.length - 2);
+            } else {
+              streamData = streamData.subarray(0, streamData.length - 1);
+            }
+          } else if (streamData[streamData.length - 1] === 0x0d) {
+            streamData = streamData.subarray(0, streamData.length - 1);
+          }
+        }
       } else {
-        streamContent += String(token.value);
+        streamData = searchBuffer;
       }
+    }
+
+    // Handle decompression
+    const filter = dict.entries.get('Filter') || dict.entries.get('/Filter');
+    if (filter) {
+      const filters = filter.type === 'array' ? filter.elements : [filter];
+      for (const f of filters) {
+        const filterName = f.type === 'name' ? f.value : '';
+        if (filterName === 'FlateDecode' || filterName === '/FlateDecode') {
+          try {
+            streamData = Decompressor.decompress(streamData);
+            logger.verbose(`Successfully decompressed FlateDecode stream`);
+          } catch (e) {
+            // Try to find Zlib header 0x78 0x9c nearby
+            const headerIndex = streamData.indexOf(Buffer.from([0x78, 0x9c]));
+            if (headerIndex !== -1 && headerIndex < 10) {
+              try {
+                streamData = Decompressor.decompress(streamData.subarray(headerIndex));
+                logger.verbose(`Successfully decompressed FlateDecode stream after finding header at ${headerIndex}`);
+              } catch (e2) {
+                logger.warn(`Failed to decompress FlateDecode even after finding header`, e2);
+              }
+            } else {
+               logger.warn(`Failed to decompress FlateDecode stream`, e);
+            }
+          }
+        } else if (filterName === 'ASCII85Decode' || filterName === '/ASCII85Decode') {
+          try {
+            streamData = Ascii85.decode(streamData);
+            logger.verbose(`Successfully decoded ASCII85 stream`);
+          } catch (e) {
+            logger.warn(`Failed to decode ASCII85 stream`, e);
+          }
+        } else if (filterName) {
+           logger.info(`Stream has unsupported filter: ${filterName}`);
+        }
+      }
+    }
+
+    // Skip until endobj or end of tokens
+    while (this.position < this.tokens.length && this.tokens[this.position].type !== TokenType.ENDLOBJ) {
       this.position++;
     }
 
-    // In many cases endstream is omitted or part of the last token. Just return what we have.
-    if (streamContent.endsWith('endstream')) {
-      streamContent = streamContent.substring(0, streamContent.length - 9).trim();
-    }
     return {
       type: 'stream',
       dictionary: dict,
-      content: streamContent,
+      content: streamData.toString('binary'),
     };
   }
 

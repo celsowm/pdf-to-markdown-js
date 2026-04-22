@@ -16,14 +16,14 @@
  * 5. Extract table boundaries from the bounding box of each grid subgraph
  */
 
-import {
+import type {
   ITableDetector,
   DetectedTable,
   TableCell,
   DetectionConfig,
   DetectorCategory,
 } from './TableTypes';
-import { TextElement } from '../../models/TextElement';
+import type { TextElement } from '../../models/TextElement';
 
 interface GraphNode {
   readonly element: TextElement;
@@ -214,6 +214,10 @@ export class GraphBasedDetector implements ITableDetector {
       let allNull = true;
 
       for (const nodeIdx of grid[row]) {
+        if (nodeIdx < 0) {
+          nextRow.push(-1);
+          continue;
+        }
         const below = nodes[nodeIdx].belowNeighbor;
         if (below !== null && !visited.has(below)) {
           nextRow.push(below);

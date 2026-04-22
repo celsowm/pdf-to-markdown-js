@@ -23,6 +23,23 @@ describe('Integration Tests - PDF to Markdown', () => {
     });
   });
 
+  describe('compressed.pdf', () => {
+    it('should convert compressed PDF to markdown', async () => {
+      const pdfPath = path.join(fixturesDir, 'compressed.pdf');
+
+      if (!fs.existsSync(pdfPath)) {
+        console.warn('Skipping test - fixture not found:', pdfPath);
+        return;
+      }
+
+      const result = await PdfToMarkdown.fromFile(pdfPath);
+
+      expect(result).toBeDefined();
+      expect(typeof result).toBe('string');
+      expect(result).toContain('Compressed Content');
+    });
+  });
+
   describe('with-headings.pdf', () => {
     it('should convert PDF with headings to markdown', async () => {
       const pdfPath = path.join(fixturesDir, 'with-headings.pdf');

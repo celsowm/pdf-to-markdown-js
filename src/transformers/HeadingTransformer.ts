@@ -1,17 +1,18 @@
-import { TextElement } from '../models/TextElement';
-import { MarkdownNode, createHeadingNode } from '../models/MarkdownNode';
-import { MarkdownTransformer } from './MarkdownTransformer';
+import type { TextElement } from '../models/TextElement';
+import type { MarkdownNode } from '../models/MarkdownNode';
+import { createHeadingNode } from '../models/MarkdownNode';
+import type { MarkdownTransformer, TransformationResult } from './MarkdownTransformer';
 
 /**
- * Font size thresholds for heading levels.
+ * Font size thresholds for heading levels (minimum sizes).
  */
 const HEADING_THRESHOLDS = {
-  h1: 24,
-  h2: 20,
+  h1: 22,
+  h2: 18,
   h3: 16,
   h4: 14,
-  h5: 12,
-  h6: 11,
+  h5: 13,
+  h6: 12,
 };
 
 /**
@@ -31,8 +32,10 @@ export class HeadingTransformer implements MarkdownTransformer {
     return elements.some((el) => el.fontSize >= HEADING_THRESHOLDS.h6 || el.isBold);
   }
 
-  transform(elements: TextElement[], allElements: TextElement[]): MarkdownNode[] {
+  transform(elements: TextElement[], allElements: TextElement[]): TransformationResult {
     const nodes: MarkdownNode[] = [];
+    const consumedElements: TextElement[] = [];
+    const positions: number[] = [];
     const medianFontSize = this.getMedianFontSize(allElements);
 
     for (const element of elements) {
@@ -40,10 +43,12 @@ export class HeadingTransformer implements MarkdownTransformer {
 
       if (headingLevel) {
         nodes.push(createHeadingNode(headingLevel, element.text.trim()));
+        consumedElements.push(element);
+        positions.push(element.y);
       }
     }
 
-    return nodes;
+    return { nodes, consumedElements, positions };
   }
 
   /**
@@ -57,6 +62,11 @@ export class HeadingTransformer implements MarkdownTransformer {
 
     // If font size is significantly larger than median, it's likely a heading
     const ratio = fontSize / medianFontSize;
+
+    // Must be at least slightly larger than median OR bold and larger than median
+    if (ratio <= 1.0 && !isBold) {
+      return null;
+    }
 
     if (fontSize >= HEADING_THRESHOLDS.h1 || (isBold && ratio > 2)) {
       return 1;

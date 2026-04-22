@@ -1,5 +1,5 @@
-import { TextElement } from '../models/TextElement';
-import { DetectedTable, TableCell } from './LatticeDetector';
+import type { TextElement } from '../models/TextElement';
+import type { DetectedTable, TableCell } from './LatticeDetector';
 
 /**
  * Extracts text content from detected table cells.

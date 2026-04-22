@@ -1,12 +1,13 @@
-import { TextElement } from '../models/TextElement';
-import { MarkdownNode, createListNode, createTextNode } from '../models/MarkdownNode';
-import { MarkdownTransformer } from './MarkdownTransformer';
+import type { TextElement } from '../models/TextElement';
+import type { MarkdownNode } from '../models/MarkdownNode';
+import { createListNode, createTextNode } from '../models/MarkdownNode';
+import type { MarkdownTransformer, TransformationResult } from './MarkdownTransformer';
 
 /**
  * Common list markers.
  */
 const BULLET_MARKERS = ['•', '●', '○', '▪', '▫', '◦', '∙', '-'];
-const NUMBERED_PATTERN = /^\d+[\.\)]\s/;
+const NUMBERED_PATTERN = /^\d+[.)]\s/;
 
 /**
  * Transformer that detects ordered and unordered lists.
@@ -25,7 +26,7 @@ export class ListTransformer implements MarkdownTransformer {
     return this.isListPattern(elements);
   }
 
-  transform(elements: TextElement[], _allElements: TextElement[]): MarkdownNode[] {
+  transform(elements: TextElement[], _allElements: TextElement[]): TransformationResult {
     const nodes: MarkdownNode[] = [];
     const isOrdered = this.isOrderedList(elements);
     const listNode = createListNode(isOrdered);
@@ -37,7 +38,7 @@ export class ListTransformer implements MarkdownTransformer {
     }
 
     nodes.push(listNode);
-    return nodes;
+    return { nodes, consumedElements: elements };
   }
 
   /**

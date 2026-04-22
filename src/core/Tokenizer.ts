@@ -27,6 +27,7 @@ export interface Token {
   readonly type: TokenType;
   readonly value: string | number;
   readonly lineNumber: number;
+  readonly charOffset: number;
 }
 
 /**
@@ -68,11 +69,13 @@ export class Tokenizer {
       return null;
     }
 
+    const startOffset = this.position;
     const char = this.content[this.position];
 
     // Comments
     if (char === '%') {
-      return this.readComment();
+      const token = this.readComment();
+      return { ...token, charOffset: startOffset };
     }
 
     // Delimiters
@@ -80,45 +83,50 @@ export class Tokenizer {
       case '<':
         if (this.content[this.position + 1] === '<') {
           this.position += 2;
-          return { type: TokenType.DICT_START, value: '<<', lineNumber: this.lineNumber };
+          return { type: TokenType.DICT_START, value: '<<', lineNumber: this.lineNumber, charOffset: startOffset };
         }
-        return this.readHexString();
+        const hexToken = this.readHexString();
+        return { ...hexToken, charOffset: startOffset };
       case '>':
         if (this.content[this.position + 1] === '>') {
           this.position += 2;
-          return { type: TokenType.DICT_END, value: '>>', lineNumber: this.lineNumber };
+          return { type: TokenType.DICT_END, value: '>>', lineNumber: this.lineNumber, charOffset: startOffset };
         }
         // Single > is unusual but skip it
         this.position++;
-        return { type: TokenType.OPERATOR, value: '>', lineNumber: this.lineNumber };
+        return { type: TokenType.OPERATOR, value: '>', lineNumber: this.lineNumber, charOffset: startOffset };
       case '[':
         this.position++;
-        return { type: TokenType.ARRAY_START, value: '[', lineNumber: this.lineNumber };
+        return { type: TokenType.ARRAY_START, value: '[', lineNumber: this.lineNumber, charOffset: startOffset };
       case ']':
         this.position++;
-        return { type: TokenType.ARRAY_END, value: ']', lineNumber: this.lineNumber };
+        return { type: TokenType.ARRAY_END, value: ']', lineNumber: this.lineNumber, charOffset: startOffset };
       case '/':
-        return this.readName();
+        const nameToken = this.readName();
+        return { ...nameToken, charOffset: startOffset };
       case '(':
-        return this.readString();
+        const stringToken = this.readString();
+        return { ...stringToken, charOffset: startOffset };
       case ')':
         this.position++;
-        return { type: TokenType.STRING, value: ')', lineNumber: this.lineNumber };
+        return { type: TokenType.STRING, value: ')', lineNumber: this.lineNumber, charOffset: startOffset };
     }
 
     // Numbers (integers or real)
     if (char === '+' || char === '-' || (char >= '0' && char <= '9')) {
-      return this.readNumber();
+      const numberToken = this.readNumber();
+      return { ...numberToken, charOffset: startOffset };
     }
 
     // Keywords and operators
     if (this.isDelimiter(char) === false) {
-      return this.readKeyword();
+      const keywordToken = this.readKeyword();
+      return { ...keywordToken, charOffset: startOffset };
     }
 
     // Skip unknown single characters
     this.position++;
-    return { type: TokenType.OPERATOR, value: char, lineNumber: this.lineNumber };
+    return { type: TokenType.OPERATOR, value: char, lineNumber: this.lineNumber, charOffset: startOffset };
   }
 
   /**
@@ -129,6 +137,9 @@ export class Tokenizer {
       const char = this.content[this.position];
       if (this.isWhitespace(char)) {
         if (char === '\r' || char === '\n') {
+          if (char === '\r' && this.content[this.position + 1] === '\n') {
+            this.position++;
+          }
           this.lineNumber++;
         }
         this.position++;
@@ -155,7 +166,7 @@ export class Tokenizer {
   /**
    * Reads a comment token (starts with %).
    */
-  private readComment(): Token {
+  private readComment(): Omit<Token, 'charOffset'> {
     let value = '';
     this.position++; // Skip %
 
@@ -174,7 +185,7 @@ export class Tokenizer {
   /**
    * Reads a hexadecimal string (enclosed in < >).
    */
-  private readHexString(): Token {
+  private readHexString(): Omit<Token, 'charOffset'> {
     let value = '';
     this.position++; // Skip <
 
@@ -196,7 +207,7 @@ export class Tokenizer {
   /**
    * Reads a literal string (enclosed in parentheses).
    */
-  private readString(): Token {
+  private readString(): Omit<Token, 'charOffset'> {
     let value = '';
     this.position++; // Skip (
     let depth = 1;
@@ -281,7 +292,7 @@ export class Tokenizer {
   /**
    * Reads a name (starts with /).
    */
-  private readName(): Token {
+  private readName(): Omit<Token, 'charOffset'> {
     let value = '';
     this.position++; // Skip /
 
@@ -300,7 +311,7 @@ export class Tokenizer {
   /**
    * Reads a number (integer or real).
    */
-  private readNumber(): Token {
+  private readNumber(): Omit<Token, 'charOffset'> {
     let value = '';
     let isReal = false;
 
@@ -326,7 +337,7 @@ export class Tokenizer {
   /**
    * Reads a keyword or operator keyword.
    */
-  private readKeyword(): Token {
+  private readKeyword(): Omit<Token, 'charOffset'> {
     let value = '';
 
     while (this.position < this.content.length) {

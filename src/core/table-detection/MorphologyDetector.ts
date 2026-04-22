@@ -15,14 +15,14 @@
  * 5. Validate rectangularity and grid regularity
  */
 
-import {
+import type {
   ITableDetector,
   DetectedTable,
   TableCell,
   DetectionConfig,
   DetectorCategory,
 } from './TableTypes';
-import { TextElement } from '../../models/TextElement';
+import type { TextElement } from '../../models/TextElement';
 
 interface BoundingBox {
   x1: number;

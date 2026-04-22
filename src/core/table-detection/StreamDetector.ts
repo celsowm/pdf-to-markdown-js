@@ -12,14 +12,14 @@
  * 5. Intersect columns and rows to form table grid
  */
 
-import {
+import type {
   ITableDetector,
   DetectedTable,
   TableCell,
   DetectionConfig,
   DetectorCategory,
 } from './TableTypes';
-import { TextElement } from '../../models/TextElement';
+import type { TextElement } from '../../models/TextElement';
 
 export class StreamDetector implements ITableDetector {
   getName(): string {

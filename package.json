@@ -22,18 +22,19 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "node scripts/build.js",
+    "build": "npm run lint && npm run test && node scripts/build.js",
     "build:tsc": "tsc",
     "build:esm": "tsc --project tsconfig.esm.json",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "generate-pdfs": "python scripts/generate-test-pdfs.py",
-    "dev": "npx http-server playground -p 3000 -o --cors",
-    "playground": "npm run build && npx http-server playground -p 3000 -o --cors -s",
+    "dev": "vite",
+    "build:playground": "vite build",
+    "playground": "npm run build && vite",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -66,12 +67,15 @@
     "prettier": "^3.2.4",
     "terser": "^5.46.1",
     "typescript": "^5.3.3",
+    "vite": "^8.0.9",
+    "vite-plugin-node-polyfills": "^0.26.0",
     "vitest": "^1.2.0"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "buffer": "^6.0.3"
+    "buffer": "^6.0.3",
+    "fflate": "^0.8.2"
   }
 }

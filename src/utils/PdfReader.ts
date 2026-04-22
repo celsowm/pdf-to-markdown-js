@@ -1,3 +1,5 @@
+import { logger } from './Logger';
+
 /**
  * Represents a cross-reference entry in the PDF.
  */
@@ -23,10 +25,10 @@ export interface Trailer {
  * Reads and parses the basic structure of a PDF file.
  */
 export class PdfReader {
-  private buffer: string;
+  private buffer: Buffer;
 
   constructor(buffer: Buffer) {
-    this.buffer = buffer.toString('binary');
+    this.buffer = buffer;
   }
 
   /**
@@ -47,21 +49,21 @@ export class PdfReader {
    * Gets the raw binary content of the PDF.
    */
   getBinaryContent(): Buffer {
-    return Buffer.from(this.buffer, 'binary');
+    return this.buffer;
   }
 
   /**
    * Gets the raw string content of the PDF.
    */
   getStringContent(): string {
-    return this.buffer;
+    return this.buffer.toString('binary');
   }
 
   /**
    * Validates if the file starts with a valid PDF header.
    */
   validateHeader(): boolean {
-    return this.buffer.startsWith('%PDF-');
+    return this.buffer.toString('binary', 0, 5) === '%PDF-';
   }
 
   /**
@@ -71,7 +73,7 @@ export class PdfReader {
     if (!this.validateHeader()) {
       throw new Error('Invalid PDF header');
     }
-    return this.buffer.substring(5, 8);
+    return this.buffer.toString('binary', 5, 8);
   }
 
   /**
@@ -79,14 +81,32 @@ export class PdfReader {
    */
   parseXRefTable(): Map<number, XRefEntry> {
     const xrefEntries = new Map<number, XRefEntry>();
-    const xrefPattern = /xref\s*\n([\s\S]*?)trailer/;
-    const xrefMatch = xrefPattern.exec(this.buffer);
+    
+    try {
+      const startXRef = this.findStartXRef();
+      const xrefBuffer = this.buffer.subarray(startXRef);
+      const content = xrefBuffer.toString('binary');
+      
+      const xrefPattern = /xref\s*\r?\n([\s\S]*?)trailer/;
+      const xrefMatch = xrefPattern.exec(content);
 
-    if (!xrefMatch) {
-      throw new Error('Cross-reference table not found');
+      if (!xrefMatch) {
+        // Fallback to searching from the beginning if startXRef is wrong
+        const fullContent = this.buffer.toString('binary');
+        const fallbackMatch = xrefPattern.exec(fullContent);
+        if (!fallbackMatch) throw new Error('Cross-reference table not found');
+        return this.parseXRefContent(fallbackMatch[1]);
+      }
+
+      return this.parseXRefContent(xrefMatch[1]);
+    } catch (e) {
+      logger.warn('Error parsing XRef table:', e);
+      throw e;
     }
+  }
 
-    const xrefContent = xrefMatch[1];
+  private parseXRefContent(xrefContent: string): Map<number, XRefEntry> {
+    const xrefEntries = new Map<number, XRefEntry>();
     const lines = xrefContent.split(/\r?\n/).filter((line) => line.trim().length > 0);
     let currentObjNum = 0;
     let remainingCount = 0;
@@ -114,7 +134,6 @@ export class PdfReader {
         }
       }
     }
-
     return xrefEntries;
   }
 
@@ -122,15 +141,32 @@ export class PdfReader {
    * Finds and parses the trailer dictionary.
    */
   parseTrailer(): Trailer {
+    // Find trailer keyword from the end
+    const lastPartSize = Math.min(this.buffer.length, 2048);
+    const lastPart = this.buffer.subarray(this.buffer.length - lastPartSize).toString('binary');
+    
+    const trailerIndex = lastPart.lastIndexOf('trailer');
+    if (trailerIndex === -1) {
+      // Try a larger part if not found
+      const fullContent = this.buffer.toString('binary');
+      const fullTrailerIndex = fullContent.lastIndexOf('trailer');
+      if (fullTrailerIndex === -1) throw new Error('Trailer not found');
+      return this.parseTrailerFromContent(fullContent.substring(fullTrailerIndex));
+    }
+
+    return this.parseTrailerFromContent(lastPart.substring(trailerIndex));
+  }
+
+  private parseTrailerFromContent(content: string): Trailer {
     const trailerPattern = /trailer\s*<<([\s\S]*?)>>/;
-    const trailerMatch = trailerPattern.exec(this.buffer);
+    const trailerMatch = trailerPattern.exec(content);
 
     if (!trailerMatch) {
-      throw new Error('Trailer not found');
+      throw new Error('Trailer dictionary not found');
     }
 
     const trailerContent = trailerMatch[1];
-    const trailer: Record<string, number | number[] | undefined> = {};
+    const trailer: Record<string, any> = {};
 
     const sizeMatch = /\/Size\s+(\d+)/.exec(trailerContent);
     if (sizeMatch) {
@@ -152,49 +188,86 @@ export class PdfReader {
       trailer.info = parseInt(infoMatch[1], 10);
     }
 
-    return trailer as unknown as Trailer;
+    return trailer as Trailer;
   }
 
   /**
    * Finds the start of the xref or trailer section.
    */
   findStartXRef(): number {
-    const startxrefPattern = /startxref\s*\n\s*(\d+)/;
-    const startxrefMatch = startxrefPattern.exec(this.buffer);
+    const lastPartSize = Math.min(this.buffer.length, 1024);
+    const lastPart = this.buffer.subarray(this.buffer.length - lastPartSize).toString('binary');
+    const startxrefPattern = /startxref\s*\r?\n\s*(\d+)/;
+    const startxrefMatch = startxrefPattern.exec(lastPart);
 
     if (!startxrefMatch) {
-      throw new Error('startxref not found');
+      // Fallback for weirdly formatted PDFs
+      const fullContent = this.buffer.toString('binary');
+      const fallbackMatch = startxrefPattern.exec(fullContent);
+      if (!fallbackMatch) throw new Error('startxref not found');
+      return parseInt(fallbackMatch[1], 10);
     }
 
     return parseInt(startxrefMatch[1], 10);
   }
 
   /**
-   * Extracts the raw content of an indirect object.
+   * Extracts the raw content of an indirect object as a Buffer.
    */
-  extractObjectContent(objNum: number, xrefTable: Map<number, XRefEntry>): string {
+  extractObjectBuffer(objNum: number, xrefTable: Map<number, XRefEntry>): Buffer {
     const entry = xrefTable.get(objNum);
-
+    
     if (!entry) {
       // Fallback: search for object in the entire buffer if xref lookup fails
-      const searchPattern = new RegExp(`\\b${objNum}\\s+\\d+\\s+obj([\\s\\S]*?)endobj`);
-      const searchMatch = searchPattern.exec(this.buffer);
+      // Still using string search but limited to avoid massive overhead
+      const content = this.buffer.toString('binary');
+      const searchPattern = new RegExp(`\\b${objNum}\\s+\\d+\\s+obj`);
+      const searchMatch = searchPattern.exec(content);
       if (searchMatch) {
-        return searchMatch[1];
+        const start = searchMatch.index;
+        const objKeywordIndex = content.indexOf('obj', start);
+        const endobjIndex = content.indexOf('endobj', objKeywordIndex);
+        if (endobjIndex !== -1) {
+          return this.buffer.subarray(objKeywordIndex + 3, endobjIndex);
+        }
       }
       throw new Error(`Object ${objNum} not found in xref table`);
     }
 
-    // Find the object definition starting from the offset
-    const objPattern = new RegExp(`${objNum}\\s+\\d+\\s+obj([\\s\\S]*?)endobj`);
-    const remainingContent = this.buffer.substring(entry.offset);
-    const objMatch = objPattern.exec(remainingContent);
-
-    if (!objMatch) {
-      throw new Error(`Object ${objNum} content not found`);
+    const start = entry.offset;
+    
+    // Find "obj" keyword within a reasonable distance from offset
+    const searchArea = this.buffer.subarray(start, Math.min(start + 100, this.buffer.length)).toString('binary');
+    const objRelIndex = searchArea.indexOf('obj');
+    
+    if (objRelIndex === -1) {
+      throw new Error(`Object ${objNum} start not found at offset ${start}`);
     }
 
-    return objMatch[1];
+    const contentStart = start + objRelIndex + 3;
+    
+    // Find "endobj" keyword
+    // We search in chunks to avoid converting huge parts to string
+    let searchPos = contentStart;
+    let endobjRelIndex = -1;
+    const endobjMarker = Buffer.from('endobj');
+    
+    // Efficient buffer search for endobj
+    const endobjIndex = this.buffer.indexOf(endobjMarker, searchPos);
+    
+    if (endobjIndex === -1) {
+      throw new Error(`Object ${objNum} end not found`);
+    }
+
+    return this.buffer.subarray(contentStart, endobjIndex);
+  }
+
+  /**
+   * Extracts the raw content of an indirect object as a string.
+   */
+  extractObjectContent(objNum: number, xrefTable: Map<number, XRefEntry>): string {
+    const buffer = this.extractObjectBuffer(objNum, xrefTable);
+    return buffer.toString('binary');
   }
 
   /**

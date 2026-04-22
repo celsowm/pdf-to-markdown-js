@@ -196,7 +196,7 @@ describe('Table Detection System', () => {
       const canTransform = transformer.canTransform(elements);
       expect(canTransform).toBe(true);
 
-      const nodes = transformer.transform(elements, elements);
+      const { nodes } = transformer.transform(elements, elements);
       expect(nodes.length).toBeGreaterThan(0);
     });
 

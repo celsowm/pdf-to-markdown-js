@@ -28,6 +28,33 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'tests', 'fixtures')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
+def generate_compressed_pdf():
+    """Generate a compressed PDF to test decompression logic."""
+    output_path = os.path.join(OUTPUT_DIR, 'compressed.pdf')
+    
+    # Temporarily enable compression for this file
+    import reportlab.rl_config
+    old_val = reportlab.rl_config.pageCompression
+    reportlab.rl_config.pageCompression = 1
+    
+    doc = SimpleDocTemplate(output_path, pagesize=letter)
+    styles = getSampleStyleSheet()
+
+    story = []
+    story.append(Paragraph('Compressed Content', styles['Heading1']))
+    story.append(
+        Paragraph(
+            'This document has page compression enabled. '
+            'The parser must be able to decompress FlateDecode streams to read this text.',
+            styles['Normal'],
+        )
+    )
+
+    doc.build(story)
+    reportlab.rl_config.pageCompression = old_val
+    print(f'Generated: {output_path}')
+
+
 def generate_simple_text_pdf():
     """Generate a PDF with simple text paragraphs."""
     output_path = os.path.join(OUTPUT_DIR, 'simple-text.pdf')
@@ -431,6 +458,7 @@ def generate_inline_formatting_pdf():
 
 if __name__ == '__main__':
     print('Generating test PDFs...')
+    generate_compressed_pdf()
     generate_simple_text_pdf()
     generate_headings_pdf()
     generate_lists_pdf()

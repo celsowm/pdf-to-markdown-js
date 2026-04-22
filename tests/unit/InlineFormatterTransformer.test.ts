@@ -58,7 +58,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const nodes = transformer.transform(elements, elements);
+      const { nodes } = transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0].type).toBe('text');
@@ -87,7 +87,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const nodes = transformer.transform(elements, elements);
+      const { nodes } = transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0].type).toBe('text');
@@ -116,7 +116,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const nodes = transformer.transform(elements, elements);
+      const { nodes } = transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0].type).toBe('text');
@@ -145,7 +145,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const nodes = transformer.transform(elements, elements);
+      const { nodes } = transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0].type).toBe('text');
@@ -203,7 +203,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const nodes = transformer.transform(elements, elements);
+      const { nodes } = transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(3);
       expect(nodes[0].metadata?.formatting?.bold).toBe(true);
@@ -229,7 +229,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const nodes = transformer.transform(elements, elements);
+      const { nodes } = transformer.transform(elements, elements);
 
       // The transformer should detect that the font name contains 'bold'
       expect(nodes[0].metadata?.formatting?.bold).toBe(false); // Note: transformer uses element properties, not font name directly
@@ -253,7 +253,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const nodes = transformer.transform(elements, elements);
+      const { nodes } = transformer.transform(elements, elements);
 
       expect(nodes[0].metadata?.formatting?.strike).toBe(true);
     });

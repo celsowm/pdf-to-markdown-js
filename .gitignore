@@ -24,3 +24,6 @@ npm-debug.log*
 
 # Coverage
 coverage/
+
+# Generated scripts
+scripts/compare_with_python_internal.py

@@ -1,53 +1,60 @@
-import { PdfReader, XRefEntry } from '../utils/PdfReader';
-import { ObjectParser, PdfObject, PdfDictionary, PdfStream } from '../core/ObjectParser';
+import type { PdfReader, XRefEntry } from '../utils/PdfReader';
+import type { PdfObject, PdfDictionary, PdfStream } from '../core/ObjectParser';
+import { ObjectParser } from '../core/ObjectParser';
 import { ContentStreamParser } from '../core/ContentStreamParser';
 import { TextExtractor } from '../core/TextExtractor';
-import { PdfDocument, createPdfDocument } from '../models/PdfDocument';
-import { Page, createPage } from '../models/Page';
-import { TextElement } from '../models/TextElement';
-import { MarkdownTransformer } from '../transformers/MarkdownTransformer';
-import { MarkdownNode, createDocumentNode } from '../models/MarkdownNode';
+import type { PdfDocument} from '../models/PdfDocument';
+import { createPdfDocument } from '../models/PdfDocument';
+import type { Page} from '../models/Page';
+import { createPage } from '../models/Page';
+import type { TextElement } from '../models/TextElement';
+import type { MarkdownTransformer } from '../transformers/MarkdownTransformer';
+import type { MarkdownNode} from '../models/MarkdownNode';
+import { createDocumentNode } from '../models/MarkdownNode';
+
+import { logger } from '../utils/Logger';
+import { CMapParser } from '../utils/CMapParser';
 
 /**
  * Helper function to check if a PdfObject is a reference.
  */
 function isReference(obj: PdfObject): obj is { type: 'reference'; objNum: number; genNum: number } {
-  return obj.type === 'reference';
+  return obj && obj.type === 'reference';
 }
 
 /**
  * Helper function to check if a PdfObject is a dictionary.
  */
 function isDictionary(obj: PdfObject): obj is PdfDictionary {
-  return obj.type === 'dictionary';
+  return obj && obj.type === 'dictionary';
 }
 
 /**
  * Helper function to check if a PdfObject is an array.
  */
 function isArray(obj: PdfObject): obj is { type: 'array'; elements: PdfObject[] } {
-  return obj.type === 'array';
+  return obj && obj.type === 'array';
 }
 
 /**
  * Helper function to check if a PdfObject is a stream.
  */
 function isStream(obj: PdfObject): obj is PdfStream {
-  return obj.type === 'stream';
+  return obj && obj.type === 'stream';
 }
 
 /**
  * Helper function to check if a PdfObject is a number.
  */
 function isNumber(obj: PdfObject): obj is { type: 'number'; value: number } {
-  return obj.type === 'number';
+  return obj && obj.type === 'number';
 }
 
 /**
  * Helper function to check if a PdfObject is a string.
  */
 function isString(obj: PdfObject): obj is { type: 'string'; value: string } {
-  return obj.type === 'string';
+  return obj && obj.type === 'string';
 }
 
 /**
@@ -57,6 +64,7 @@ function isString(obj: PdfObject): obj is { type: 'string'; value: string } {
 export class PdfParser {
   private readonly pdfReader: PdfReader;
   private readonly transformers: MarkdownTransformer[];
+  private readonly cmapCache: Map<number, Map<number, string>> = new Map();
 
   constructor(pdfReader: PdfReader, transformers: MarkdownTransformer[]) {
     this.pdfReader = pdfReader;
@@ -67,19 +75,25 @@ export class PdfParser {
    * Parses the PDF document and returns the Markdown AST.
    */
   parse(): MarkdownNode {
+    logger.info('Starting PDF parsing...');
+    
     // Parse PDF structure
     const xrefTable = this.parseXRefTable();
     const trailer = this.pdfReader.parseTrailer();
+    logger.debug(`PDF trailer parsed, size: ${trailer.size}, root: ${trailer.root}`);
 
     // Get pages
     const pages = this.extractPages(xrefTable, trailer);
+    logger.info(`Extracted ${pages.length} pages`);
 
     // Build document
     const metadata = this.extractMetadata(xrefTable, trailer);
     const document = createPdfDocument(pages, metadata);
 
     // Convert to Markdown AST
-    return this.convertToMarkdown(document);
+    const result = this.convertToMarkdown(document);
+    logger.info('PDF parsing completed');
+    return result;
   }
 
   /**
@@ -87,10 +101,12 @@ export class PdfParser {
    */
   private parseXRefTable(): Map<number, XRefEntry> {
     try {
-      return this.pdfReader.parseXRefTable();
-    } catch {
+      const table = this.pdfReader.parseXRefTable();
+      logger.debug(`XRef table parsed, ${table.size} entries found`);
+      return table;
+    } catch (e) {
       // If xref table parsing fails, try to find objects manually
-      console.warn('Failed to parse xref table, attempting alternative extraction');
+      logger.warn('Failed to parse xref table, attempting alternative extraction', e);
       return new Map();
     }
   }
@@ -105,43 +121,80 @@ export class PdfParser {
       // Find catalog and pages
       const catalogObj = trailer.root;
       if (!catalogObj) {
+        logger.error('PDF root (Catalog) not found');
         return pages;
       }
 
-      const catalogContent = this.pdfReader.extractObjectContent(catalogObj, xrefTable);
+      const catalogContent = this.pdfReader.extractObjectBuffer(catalogObj, xrefTable);
       const catalogDict = ObjectParser.parseContent(catalogContent);
 
-      // Navigate to pages
-      const pagesObj = this.getDictionaryEntry(catalogDict, '/Pages');
-      if (!pagesObj || !isReference(pagesObj)) {
+      // Navigate to pages tree
+      const pagesRootRef = this.getDictionaryEntry(catalogDict, '/Pages');
+      if (!pagesRootRef || !isReference(pagesRootRef)) {
+        logger.error('PDF /Pages object not found or invalid');
         return pages;
       }
 
-      const pagesContent = this.pdfReader.extractObjectContent(pagesObj.objNum, xrefTable);
-      const pagesDict = ObjectParser.parseContent(pagesContent);
+      // Collect all page references recursively
+      const pageRefs: number[] = [];
+      this.collectPageReferences(pagesRootRef.objNum, xrefTable, pageRefs);
+      
+      logger.debug(`Collected ${pageRefs.length} leaf page references`);
 
-      // Get kids (individual pages)
-      const kidsObj = this.getDictionaryEntry(pagesDict, '/Kids');
-      if (!kidsObj || !isArray(kidsObj)) {
-        return pages;
-      }
-
-      const kidsArray = kidsObj.elements;
       let pageIndex = 0;
-
-      for (const kid of kidsArray) {
-        if (isReference(kid)) {
-          const page = this.extractPage(kid.objNum, xrefTable, pageIndex++);
-          if (page) {
-            pages.push(page);
-          }
+      for (const pageObjNum of pageRefs) {
+        const page = this.extractPage(pageObjNum, xrefTable, pageIndex++);
+        if (page) {
+          pages.push(page);
         }
       }
     } catch (error) {
-      console.warn('Error extracting pages:', error);
+      logger.error('Error extracting pages:', error);
     }
 
     return pages;
+  }
+
+  /**
+   * Recursively collects all leaf page object numbers from the pages tree.
+   */
+  private collectPageReferences(objNum: number, xrefTable: Map<number, XRefEntry>, result: number[]): void {
+    try {
+      const content = this.pdfReader.extractObjectBuffer(objNum, xrefTable);
+      const dict = ObjectParser.parseContent(content);
+
+      if (!isDictionary(dict)) return;
+
+      const type = this.getDictionaryEntry(dict, '/Type');
+      const typeStr = (type && type.type === 'name') ? type.value : '';
+
+      if (typeStr === 'Page' || typeStr === '/Page') {
+        result.push(objNum);
+      } else if (typeStr === 'Pages' || typeStr === '/Pages') {
+        const kids = this.getDictionaryEntry(dict, '/Kids');
+        if (kids && isArray(kids)) {
+          for (const kid of kids.elements) {
+            if (isReference(kid)) {
+              this.collectPageReferences(kid.objNum, xrefTable, result);
+            }
+          }
+        }
+      } else {
+        // Fallback: if no type, check for /Kids or /Contents to guess
+        const kids = this.getDictionaryEntry(dict, '/Kids');
+        if (kids && isArray(kids)) {
+          for (const kid of kids.elements) {
+            if (isReference(kid)) {
+              this.collectPageReferences(kid.objNum, xrefTable, result);
+            }
+          }
+        } else if (this.getDictionaryEntry(dict, '/Contents')) {
+          result.push(objNum);
+        }
+      }
+    } catch (e) {
+      logger.warn(`Error collecting page references for obj ${objNum}:`, e);
+    }
   }
 
   /**
@@ -153,8 +206,18 @@ export class PdfParser {
     pageIndex: number,
   ): Page | null {
     try {
-      const pageContent = this.pdfReader.extractObjectContent(objNum, xrefTable);
+      logger.debug(`Extracting page ${pageIndex + 1} (obj ${objNum})...`);
+      const pageContent = this.pdfReader.extractObjectBuffer(objNum, xrefTable);
       const pageDict = ObjectParser.parseContent(pageContent);
+
+      if (!isDictionary(pageDict)) {
+        logger.warn(`Page obj ${objNum} is not a dictionary`);
+        return null;
+      }
+
+      // Log keys for debugging
+      const keys = Array.from(pageDict.entries.keys());
+      logger.verbose(`Page ${pageIndex + 1} keys: ${keys.join(', ')}`);
 
       // Get page dimensions
       const mediaBox = this.getDictionaryEntry(pageDict, '/MediaBox');
@@ -169,21 +232,87 @@ export class PdfParser {
         }
       }
 
+      // Extract fonts and CMaps
+      const resources = this.getDictionaryEntry(pageDict, '/Resources');
+      const cmaps = this.extractFontCMaps(resources, xrefTable);
+
       // Extract content stream
       const contents = this.getDictionaryEntry(pageDict, '/Contents');
+      if (contents) {
+         logger.debug(`Page ${pageIndex + 1} /Contents type: ${contents.type}`);
+      } else {
+         logger.debug(`Page ${pageIndex + 1} /Contents not found in dictionary`);
+      }
+      
       const textElements = this.extractTextFromContents(
         contents,
         xrefTable,
         width,
         height,
         pageIndex,
+        cmaps
       );
 
+      logger.debug(`Page ${pageIndex + 1} extracted, ${textElements.length} text elements found`);
       return createPage(pageIndex, width, height, textElements);
     } catch (error) {
-      console.warn(`Error extracting page ${pageIndex + 1}:`, error);
+      logger.warn(`Error extracting page ${pageIndex + 1}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Extracts ToUnicode CMaps for all fonts in the resources.
+   */
+  private extractFontCMaps(resources: PdfObject | null, xrefTable: Map<number, XRefEntry>): Map<string, Map<number, string>> {
+    const cmaps = new Map<string, Map<number, string>>();
+    if (!resources || !isDictionary(resources)) return cmaps;
+
+    const fontsObj = this.getDictionaryEntry(resources, '/Font');
+    if (!fontsObj || !isDictionary(fontsObj)) return cmaps;
+
+    for (const [fontName, fontRef] of fontsObj.entries) {
+      if (isReference(fontRef)) {
+        // Check cache first by font reference
+        if (this.cmapCache.has(fontRef.objNum)) {
+          cmaps.set(fontName.startsWith('/') ? fontName.substring(1) : fontName, this.cmapCache.get(fontRef.objNum)!);
+          continue;
+        }
+
+        try {
+          const fontContent = this.pdfReader.extractObjectBuffer(fontRef.objNum, xrefTable);
+          const fontDict = ObjectParser.parseContent(fontContent);
+          
+          if (isDictionary(fontDict)) {
+            const toUnicodeRef = this.getDictionaryEntry(fontDict, '/ToUnicode');
+            if (toUnicodeRef && isReference(toUnicodeRef)) {
+              // Check cache by ToUnicode reference
+              if (this.cmapCache.has(toUnicodeRef.objNum)) {
+                const cmap = this.cmapCache.get(toUnicodeRef.objNum)!;
+                cmaps.set(fontName.startsWith('/') ? fontName.substring(1) : fontName, cmap);
+                this.cmapCache.set(fontRef.objNum, cmap);
+                continue;
+              }
+
+              const cmapContent = this.pdfReader.extractObjectBuffer(toUnicodeRef.objNum, xrefTable);
+              const cmapObj = ObjectParser.parseContent(cmapContent);
+              
+              if (isStream(cmapObj)) {
+                const cmap = CMapParser.parse(cmapObj.content);
+                cmaps.set(fontName.startsWith('/') ? fontName.substring(1) : fontName, cmap);
+                // Cache by both references
+                this.cmapCache.set(toUnicodeRef.objNum, cmap);
+                this.cmapCache.set(fontRef.objNum, cmap);
+              }
+            }
+          }
+        } catch (e) {
+          logger.debug(`Failed to extract CMap for font ${fontName}`, e);
+        }
+      }
+    }
+
+    return cmaps;
   }
 
   /**
@@ -195,8 +324,10 @@ export class PdfParser {
     width: number,
     height: number,
     pageIndex: number,
+    cmaps: Map<string, Map<number, string>>
   ): TextElement[] {
     if (!contents) {
+      logger.debug(`No /Contents found for page ${pageIndex + 1}`);
       return [];
     }
 
@@ -204,44 +335,52 @@ export class PdfParser {
 
     if (isReference(contents)) {
       try {
-        const objContent = this.pdfReader.extractObjectContent(contents.objNum, xrefTable);
+        const objContent = this.pdfReader.extractObjectBuffer(contents.objNum, xrefTable);
         const objDict = ObjectParser.parseContent(objContent);
 
         if (isStream(objDict)) {
           streamContent = objDict.content;
+          logger.debug(`Extracted stream content from obj ${contents.objNum}, length: ${streamContent.length}`);
+        } else {
+          logger.debug(`Obj ${contents.objNum} is not a stream, it's a ${objDict.type}`);
         }
-      } catch {
+      } catch (e) {
+        logger.warn(`Failed to extract content stream for obj ${contents.objNum}`, e);
         return [];
       }
     } else if (isArray(contents)) {
       // Multiple content streams
       const elements = contents.elements;
+      logger.debug(`Page ${pageIndex + 1} has ${elements.length} content streams in array`);
       for (const elem of elements) {
         if (isReference(elem)) {
           try {
-            const objContent = this.pdfReader.extractObjectContent(elem.objNum, xrefTable);
+            const objContent = this.pdfReader.extractObjectBuffer(elem.objNum, xrefTable);
             const objDict = ObjectParser.parseContent(objContent);
 
             if (isStream(objDict)) {
               streamContent += objDict.content;
             }
-          } catch {
-            // Continue with next stream
+          } catch (e) {
+             logger.warn(`Failed to extract one of the content streams for page ${pageIndex + 1}`, e);
           }
         }
       }
+      logger.debug(`Total combined stream content length: ${streamContent.length}`);
     }
 
     if (!streamContent) {
+      logger.debug(`No stream content extracted for page ${pageIndex + 1}`);
       return [];
     }
 
     // Parse content stream
     const contentStreamParser = new ContentStreamParser(streamContent);
     const operations = contentStreamParser.parse();
+    logger.debug(`Parsed ${operations.length} operations from content stream`);
 
     // Extract text
-    const textExtractor = new TextExtractor(width, height, pageIndex);
+    const textExtractor = new TextExtractor(width, height, pageIndex, cmaps);
     return textExtractor.extractTextElements(operations);
   }
 
@@ -256,7 +395,7 @@ export class PdfParser {
 
     if (trailer.info) {
       try {
-        const infoContent = this.pdfReader.extractObjectContent(trailer.info, xrefTable);
+        const infoContent = this.pdfReader.extractObjectBuffer(trailer.info, xrefTable);
         const infoDict = ObjectParser.parseContent(infoContent);
 
         if (isDictionary(infoDict)) {
@@ -328,7 +467,12 @@ export class PdfParser {
       return [];
     }
 
-    const nodes: MarkdownNode[] = [];
+    interface NodeWithPosition {
+      node: MarkdownNode;
+      y: number;
+    }
+
+    const nodesWithPosition: NodeWithPosition[] = [];
     const usedElements = new Set<TextElement>();
 
     // Try each transformer in priority order
@@ -340,12 +484,29 @@ export class PdfParser {
       }
 
       if (transformer.canTransform([...unusedElements])) {
-        const transformed = transformer.transform([...unusedElements], [...allElements]);
-        nodes.push(...transformed);
-        unusedElements.forEach((el) => usedElements.add(el));
+        const { nodes: newNodes, consumedElements, positions } = transformer.transform(
+          [...unusedElements],
+          [...allElements],
+        );
+        
+        if (newNodes.length > 0) {
+           for (let i = 0; i < newNodes.length; i++) {
+             const node = newNodes[i];
+             const y = (positions && positions[i] !== undefined) 
+               ? positions[i] 
+               : (consumedElements.length > 0 ? consumedElements.reduce((sum, el) => sum + el.y, 0) / consumedElements.length : 0);
+             
+             nodesWithPosition.push({ node, y });
+           }
+        }
+        
+        consumedElements.forEach((el) => usedElements.add(el));
       }
     }
 
-    return nodes;
+    // Sort nodes by Y position (descending, as PDF Y is typically bottom-up)
+    nodesWithPosition.sort((a, b) => b.y - a.y);
+
+    return nodesWithPosition.map(n => n.node);
   }
 }
