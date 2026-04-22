@@ -19,6 +19,8 @@ import type {
   DetectorCategory,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import type { LineSegment } from '../TextExtractor';
+import type { LineSegment } from '../TextExtractor';
 import { TableUtils } from './TableUtils';
 
 export class StreamDetector implements ITableDetector {
@@ -34,7 +36,11 @@ export class StreamDetector implements ITableDetector {
     return 0.6;
   }
 
-  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig): DetectedTable[] {
+  detect(
+    elements: ReadonlyArray<TextElement>,
+    config: DetectionConfig,
+    _lines?: ReadonlyArray<LineSegment>,
+  ): DetectedTable[] {
     if (elements.length < 4) return [];
 
     // Group elements into potential rows first to avoid mixing tables

@@ -23,6 +23,7 @@ import type {
   DetectorCategory,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import type { LineSegment } from '../TextExtractor';
 
 /**
  * Predefined table template with expected bitmask and extraction region.
@@ -206,7 +207,7 @@ export class VisualSignatureDetector implements ITableDetector {
     return 0.9;
   }
 
-  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig): DetectedTable[] {
+  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig, lines?: ReadonlyArray<LineSegment>): DetectedTable[] {
     if (elements.length < 4) {
       return [];
     }

@@ -1,4 +1,5 @@
 import type { TextElement } from '../models/TextElement';
+import type { Page } from '../models/Page';
 import type { MarkdownNode } from '../models/MarkdownNode';
 import { createHeadingNode } from '../models/MarkdownNode';
 import type { MarkdownTransformer, TransformationResult } from './MarkdownTransformer';
@@ -32,11 +33,11 @@ export class HeadingTransformer implements MarkdownTransformer {
     return elements.some((el) => el.fontSize >= HEADING_THRESHOLDS.h6 || el.isBold);
   }
 
-  transform(elements: TextElement[], allElements: TextElement[]): TransformationResult {
+  transform(elements: TextElement[], page: Page): TransformationResult {
     const nodes: MarkdownNode[] = [];
     const consumedElements: TextElement[] = [];
     const positions: number[] = [];
-    const medianFontSize = this.getMedianFontSize(allElements);
+    const medianFontSize = this.getMedianFontSize([...page.textElements]);
 
     for (const element of elements) {
       const headingLevel = this.detectHeadingLevel(element, medianFontSize);

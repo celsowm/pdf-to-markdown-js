@@ -25,6 +25,15 @@ export interface TextOperation {
     | 'saveState'
     | 'restoreState'
     | 'concatenateMatrix'
+    | 'pathMoveTo'
+    | 'pathLineTo'
+    | 'pathRect'
+    | 'pathClose'
+    | 'paintStroke'
+    | 'pathFill'
+    | 'pathFillEvenOdd'
+    | 'pathFillAndStroke'
+    | 'pathFillAndStrokeEvenOdd'
     | 'unknown';
   readonly text?: string;
   readonly matrix?: TextMatrix;
@@ -32,6 +41,8 @@ export interface TextOperation {
   readonly fontSize?: number;
   readonly x?: number;
   readonly y?: number;
+  readonly width?: number;
+  readonly height?: number;
   readonly relative?: boolean;
 }
 
@@ -339,6 +350,41 @@ export class ContentStreamParser {
           return { type: 'saveState' };
         case 'Q':
           return { type: 'restoreState' };
+        case 'm': {
+          const y = Number(this.stack.pop());
+          const x = Number(this.stack.pop());
+          return { type: 'pathMoveTo', x, y };
+        }
+        case 'l': {
+          const y = Number(this.stack.pop());
+          const x = Number(this.stack.pop());
+          return { type: 'pathLineTo', x, y };
+        }
+        case 're': {
+          const h = Number(this.stack.pop());
+          const w = Number(this.stack.pop());
+          const y = Number(this.stack.pop());
+          const x = Number(this.stack.pop());
+          return { type: 'pathRect', x, y, width: w, height: h };
+        }
+        case 'h':
+          return { type: 'pathClose' };
+        case 'S':
+        case 's': // s is 'h S'
+          return { type: 'paintStroke' };
+        case 'f':
+        case 'F':
+        case 'f*':
+          return { type: op === 'f*' ? 'pathFillEvenOdd' : 'pathFill' };
+        case 'B':
+        case 'B*':
+        case 'b':
+        case 'b*':
+          return { type: (op === 'B*' || op === 'b*') ? 'pathFillAndStrokeEvenOdd' : 'pathFillAndStroke' };
+        case 'w': {
+          const width = Number(this.stack.pop());
+          return { type: 'lineWidth', width };
+        }
         default:
           // For now we don't log every single unknown operator to avoid spam
           // but we clear the stack to keep it healthy

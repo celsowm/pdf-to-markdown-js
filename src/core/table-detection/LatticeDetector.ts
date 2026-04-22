@@ -10,7 +10,6 @@
  * - LSP: Interchangeable with other detectors
  * - DIP: Depends on ITableDetector abstraction
  */
-
 import type {
   ITableDetector,
   DetectedTable,
@@ -18,6 +17,8 @@ import type {
   DetectorCategory,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import type { LineSegment } from '../TextExtractor';
+import type { LineSegment } from '../TextExtractor';
 import { TableUtils } from './TableUtils';
 
 /**
@@ -36,9 +37,19 @@ export class LatticeDetector implements ITableDetector {
     return 0.8;
   }
 
-  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig): DetectedTable[] {
+  detect(
+    elements: ReadonlyArray<TextElement>,
+    config: DetectionConfig,
+    lines?: ReadonlyArray<LineSegment>,
+  ): DetectedTable[] {
     if (elements.length < config.minRows * config.minCols) {
       return [];
+    }
+
+    // Try vector-based detection first if lines are available
+    if (lines && lines.length > 0) {
+      const vectorTables = this.detectByVectors(elements, lines, config);
+      if (vectorTables.length > 0) return vectorTables;
     }
 
     const tables: DetectedTable[] = [];
@@ -163,5 +174,54 @@ export class LatticeDetector implements ITableDetector {
     });
 
     return consistentClusters.map(c => c.center);
+  }
+
+  /**
+   * Detects tables by intersecting horizontal and vertical line segments.
+   */
+  private detectByVectors(
+    elements: ReadonlyArray<TextElement>,
+    lines: ReadonlyArray<LineSegment>,
+    config: DetectionConfig,
+  ): DetectedTable[] {
+    const hLines = lines.filter(l => l.isHorizontal);
+    const vLines = lines.filter(l => l.isVertical);
+
+    if (hLines.length < 2 || vLines.length < 2) return [];
+
+    // Find intersections (potential cell corners)
+    const xPoints = new Set<number>();
+    const yPoints = new Set<number>();
+
+    for (const h of hLines) {
+      yPoints.add(h.y1);
+      xPoints.add(h.x1);
+      xPoints.add(h.x2);
+    }
+    for (const v of vLines) {
+      xPoints.add(v.x1);
+      yPoints.add(v.y1);
+      yPoints.add(v.y2);
+    }
+
+    // Cluster points that are very close
+    const xClusters = TableUtils.clusterValueRanges(Array.from(xPoints), config.tolerance);
+    const yClusters = TableUtils.clusterValueRanges(Array.from(yPoints), config.tolerance);
+
+    if (xClusters.length < 2 || yClusters.length < 2) return [];
+
+    const colBoundaries = xClusters.map(c => c.center).sort((a, b) => a - b);
+    // const rowBoundaries = yClusters.map(c => c.center).sort((a, b) => b - a);
+
+    // Build the table using the grid formed by these lines
+    const table = TableUtils.buildTableFromGrid(
+      `lattice-v2-${Date.now()}`,
+      this.getName(),
+      this.groupByYPosition(elements, config.tolerance),
+      colBoundaries,
+      config
+    );
+
+    return table ? [table] : [];
   }
 }

@@ -1,4 +1,5 @@
 import type { TextElement } from '../models/TextElement';
+import type { Page } from '../models/Page';
 import type { MarkdownNode } from '../models/MarkdownNode';
 import { createParagraphNode, createTextNode } from '../models/MarkdownNode';
 import type { MarkdownTransformer, TransformationResult } from './MarkdownTransformer';
@@ -17,7 +18,7 @@ export class ParagraphTransformer implements MarkdownTransformer {
     return true;
   }
 
-  transform(elements: TextElement[], _allElements: TextElement[]): TransformationResult {
+  transform(elements: TextElement[], page: Page): TransformationResult {
     if (elements.length === 0) {
       return { nodes: [], consumedElements: [] };
     }

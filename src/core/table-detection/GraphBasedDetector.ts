@@ -24,6 +24,7 @@ import type {
   DetectorCategory,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import type { LineSegment } from '../TextExtractor';
 
 interface GraphNode {
   readonly element: TextElement;
@@ -51,7 +52,7 @@ export class GraphBasedDetector implements ITableDetector {
     return 0.4;
   }
 
-  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig): DetectedTable[] {
+  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig, lines?: ReadonlyArray<LineSegment>): DetectedTable[] {
     if (elements.length < config.minRows * config.minCols) {
       return [];
     }

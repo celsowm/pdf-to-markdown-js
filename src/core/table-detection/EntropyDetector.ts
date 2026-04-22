@@ -24,6 +24,7 @@ import type {
   DetectorCategory,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import type { LineSegment } from '../TextExtractor';
 
 interface EntropyRegion {
   readonly yStart: number;
@@ -45,7 +46,7 @@ export class EntropyDetector implements ITableDetector {
     return 0.3;
   }
 
-  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig): DetectedTable[] {
+  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig, lines?: ReadonlyArray<LineSegment>): DetectedTable[] {
     if (elements.length < config.minRows * config.minCols) {
       return [];
     }

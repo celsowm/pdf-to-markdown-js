@@ -4,6 +4,8 @@
  */
 
 import type { TextElement } from '../../models/TextElement';
+import type { LineSegment } from '../TextExtractor';
+import type { LineSegment } from '../TextExtractor';
 
 /**
  * Represents a cell in a detected table.
@@ -88,9 +90,13 @@ export type DetectorCategory =
  */
 export interface ITableDetector {
   /**
-   * Detects tables in text elements.
+   * Detects tables in text elements and optional lines.
    */
-  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig): DetectedTable[];
+  detect(
+    elements: ReadonlyArray<TextElement>,
+    config: DetectionConfig,
+    lines?: ReadonlyArray<LineSegment>,
+  ): DetectedTable[];
 
   /**
    * Returns the detector name.

@@ -24,6 +24,8 @@ import type {
   DetectorCategory,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import type { LineSegment } from '../TextExtractor';
+import type { LineSegment } from '../TextExtractor';
 import { TableUtils } from './TableUtils';
 
 /**
@@ -55,7 +57,11 @@ export class RXYCutDetector implements ITableDetector {
     return 0.5;
   }
 
-  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig): DetectedTable[] {
+  detect(
+    elements: ReadonlyArray<TextElement>,
+    config: DetectionConfig,
+    _lines?: ReadonlyArray<LineSegment>,
+  ): DetectedTable[] {
     if (elements.length < 4) return [];
 
     const elems = [...elements] as TextElement[];

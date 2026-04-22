@@ -19,6 +19,7 @@ import {
   DEFAULT_REGISTRY_CONFIG,
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
+import type { LineSegment } from '../TextExtractor';
 
 // Import all detectors
 import { LatticeDetector } from './LatticeDetector';
@@ -77,6 +78,7 @@ export class DetectorRegistry {
   detectAll(
     elements: ReadonlyArray<TextElement>,
     config: DetectionConfig = DEFAULT_DETECTION_CONFIG,
+    lines?: ReadonlyArray<LineSegment>,
   ): DetectedTable[] {
     const allTables: DetectedTable[] = [];
 
@@ -87,7 +89,7 @@ export class DetectorRegistry {
       if (!detector) continue;
 
       try {
-        const tables = detector.detect(elements, config);
+        const tables = detector.detect(elements, config, lines);
 
         // Calculate confidence for each table
         for (const table of tables) {
@@ -174,13 +176,14 @@ export class DetectorRegistry {
     name: string,
     elements: ReadonlyArray<TextElement>,
     config: DetectionConfig = DEFAULT_DETECTION_CONFIG,
+    lines?: ReadonlyArray<LineSegment>,
   ): DetectedTable[] {
     const detector = this.detectors.get(name);
     if (!detector) {
       throw new Error(`Detector ${name} not found`);
     }
 
-    const tables = detector.detect(elements, config);
+    const tables = detector.detect(elements, config, lines);
     const weight = this.config.weights.find((w) => w.name === name);
     const weightValue = weight?.weight ?? 1.0;
 

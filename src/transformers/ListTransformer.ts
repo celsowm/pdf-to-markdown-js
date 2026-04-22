@@ -1,4 +1,5 @@
 import type { TextElement } from '../models/TextElement';
+import type { Page } from '../models/Page';
 import type { MarkdownNode } from '../models/MarkdownNode';
 import { createListNode, createTextNode } from '../models/MarkdownNode';
 import type { MarkdownTransformer, TransformationResult } from './MarkdownTransformer';
@@ -26,7 +27,7 @@ export class ListTransformer implements MarkdownTransformer {
     return this.isListPattern(elements);
   }
 
-  transform(elements: TextElement[], _allElements: TextElement[]): TransformationResult {
+  transform(elements: TextElement[], page: Page): TransformationResult {
     const nodes: MarkdownNode[] = [];
     const isOrdered = this.isOrderedList(elements);
     const listNode = createListNode(isOrdered);

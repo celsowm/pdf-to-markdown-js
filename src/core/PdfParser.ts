@@ -244,7 +244,7 @@ export class PdfParser {
          logger.debug(`Page ${pageIndex + 1} /Contents not found in dictionary`);
       }
       
-      const textElements = this.extractTextFromContents(
+      const { textElements, lines } = this.extractElementsFromContents(
         contents,
         xrefTable,
         width,
@@ -253,8 +253,8 @@ export class PdfParser {
         cmaps
       );
 
-      logger.debug(`Page ${pageIndex + 1} extracted, ${textElements.length} text elements found`);
-      return createPage(pageIndex, width, height, textElements);
+      logger.debug(`Page ${pageIndex + 1} extracted, ${textElements.length} text elements and ${lines.length} lines found`);
+      return createPage(pageIndex, width, height, textElements, lines);
     } catch (error) {
       logger.warn(`Error extracting page ${pageIndex + 1}:`, error);
       return null;
@@ -316,19 +316,19 @@ export class PdfParser {
   }
 
   /**
-   * Extracts text elements from the page contents.
+   * Extracts text and graphics from page contents.
    */
-  private extractTextFromContents(
+  private extractElementsFromContents(
     contents: PdfObject | null,
     xrefTable: Map<number, XRefEntry>,
     width: number,
     height: number,
     pageIndex: number,
     cmaps: Map<string, Map<number, string>>
-  ): TextElement[] {
+  ): { textElements: TextElement[]; lines: LineSegment[] } {
     if (!contents) {
       logger.debug(`No /Contents found for page ${pageIndex + 1}`);
-      return [];
+      return { textElements: [], lines: [] };
     }
 
     let streamContent = '';
@@ -339,14 +339,14 @@ export class PdfParser {
         const objDict = ObjectParser.parseContent(objContent);
 
         if (isStream(objDict)) {
-          streamContent = objDict.content;
+          streamContent = objDict.content.toString('binary');
           logger.debug(`Extracted stream content from obj ${contents.objNum}, length: ${streamContent.length}`);
         } else {
           logger.debug(`Obj ${contents.objNum} is not a stream, it's a ${objDict.type}`);
         }
       } catch (e) {
         logger.warn(`Failed to extract content stream for obj ${contents.objNum}`, e);
-        return [];
+        return { textElements: [], lines: [] };
       }
     } else if (isArray(contents)) {
       // Multiple content streams
@@ -359,7 +359,7 @@ export class PdfParser {
             const objDict = ObjectParser.parseContent(objContent);
 
             if (isStream(objDict)) {
-              streamContent += objDict.content;
+              streamContent += objDict.content.toString('binary');
             }
           } catch (e) {
              logger.warn(`Failed to extract one of the content streams for page ${pageIndex + 1}`, e);
@@ -371,7 +371,7 @@ export class PdfParser {
 
     if (!streamContent) {
       logger.debug(`No stream content extracted for page ${pageIndex + 1}`);
-      return [];
+      return { textElements: [], lines: [] };
     }
 
     // Parse content stream
@@ -379,9 +379,12 @@ export class PdfParser {
     const operations = contentStreamParser.parse();
     logger.debug(`Parsed ${operations.length} operations from content stream`);
 
-    // Extract text
+    // Extract elements
     const textExtractor = new TextExtractor(width, height, pageIndex, cmaps);
-    return textExtractor.extractTextElements(operations);
+    return {
+      textElements: textExtractor.extractTextElements(operations),
+      lines: textExtractor.extractGraphics(operations),
+    };
   }
 
   /**
@@ -449,7 +452,7 @@ export class PdfParser {
     const allNodes: MarkdownNode[] = [];
 
     for (const page of document.pages) {
-      const pageNodes = this.transformPage(page.textElements, page.textElements);
+      const pageNodes = this.transformPage(page);
       allNodes.push(...pageNodes);
     }
 
@@ -459,10 +462,8 @@ export class PdfParser {
   /**
    * Transforms text elements to Markdown nodes using registered transformers.
    */
-  private transformPage(
-    elements: ReadonlyArray<TextElement>,
-    allElements: ReadonlyArray<TextElement>,
-  ): MarkdownNode[] {
+  private transformPage(page: Page): MarkdownNode[] {
+    const elements = page.textElements;
     if (elements.length === 0) {
       return [];
     }
@@ -486,7 +487,7 @@ export class PdfParser {
       if (transformer.canTransform([...unusedElements])) {
         const { nodes: newNodes, consumedElements, positions } = transformer.transform(
           [...unusedElements],
-          [...allElements],
+          page,
         );
         
         if (newNodes.length > 0) {

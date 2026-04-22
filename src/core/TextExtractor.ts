@@ -6,6 +6,17 @@ import { logger } from '../utils/Logger';
 import { CMapParser } from '../utils/CMapParser';
 
 /**
+ * Represents a line segment in PDF space.
+ */
+export interface LineSegment {
+  readonly x1: number;
+  readonly y1: number;
+  readonly x2: number;
+  readonly y2: number;
+  readonly isHorizontal: boolean;
+  readonly isVertical: boolean;
+}
+/**
  * Default font sizes for common font names.
  */
 const DEFAULT_FONT_SIZES = {
@@ -26,6 +37,8 @@ const WORD_TOLERANCE = 3;
 
 /**
  * Extracts and organizes text from PDF text operations.
+...
+
  * Applies heuristics to detect paragraphs, headings, and other structural elements.
  */
 export class TextExtractor {
@@ -102,35 +115,23 @@ export class TextExtractor {
             // Remove null bytes and other common PDF artifacts
             mappedText = mappedText.replace(/\0/g, '');
 
-            if (mappedText.trim().length === 0 && operation.text.length > 0) {
-                // If it was all null bytes, try fallback if it's potentially UTF-16
-            }
             // (x, y) in text space -> (tx, ty) in user space
+            // Simple approximation for now
             const tx = tm.e * ctm.a + tm.f * ctm.c + ctm.e;
             const ty = tm.e * ctm.b + tm.f * ctm.d + ctm.f;
 
-            // Deduplication: skip if exactly same text at almost same position
-            const isDuplicate = positionedTexts.some(pt => 
-              pt.text === mappedText && 
-              Math.abs(pt.x - tx) < 0.5 && 
-              Math.abs(pt.y - ty) < 0.5
-            );
-
-            if (!isDuplicate) {
-              positionedTexts.push({
-                text: mappedText,
-                x: tx,
-                y: ty,
-                fontSize: currentFontSize,
-                fontName: currentFontName,
-              });
-            }
+            positionedTexts.push({
+              text: mappedText,
+              x: tx,
+              y: ty,
+              fontSize: currentFontSize,
+              fontName: currentFontName,
+            });
           }
           break;
 
         case 'moveToNextLine':
           if (operation.relative && operation.x !== undefined && operation.y !== undefined) {
-            // Td, TD move relative to current line matrix
             tlm = {
               ...tlm,
               e: tlm.e + operation.x,
@@ -138,11 +139,9 @@ export class TextExtractor {
             };
             tm = { ...tlm };
           } else if (operation.x !== undefined && operation.y !== undefined) {
-            // Absolute move (uncommon for next line but handled)
             tm = { ...tm, e: operation.x, f: operation.y };
             tlm = { ...tm };
           } else {
-            // T* or similar
             tlm = { ...tlm, e: 0, f: tlm.f - currentFontSize };
             tm = { ...tlm };
           }
@@ -150,11 +149,85 @@ export class TextExtractor {
       }
     }
 
-    if (positionedTexts.length === 0 && operations.length > 0) {
-       logger.debug(`No text extracted despite having ${operations.length} operations`);
+    return this.organizeTextElements(positionedTexts);
+  }
+
+  /**
+   * Extracts graphical line segments from path operations.
+   */
+  extractGraphics(operations: TextOperation[]): LineSegment[] {
+    const lines: LineSegment[] = [];
+    let currentX = 0;
+    let currentY = 0;
+    let startPathX = 0;
+    let startPathY = 0;
+    
+    let ctm: TextMatrix = { ...IDENTITY_MATRIX };
+    const ctmStack: TextMatrix[] = [];
+
+    for (const op of operations) {
+      switch (op.type) {
+        case 'saveState':
+          ctmStack.push({ ...ctm });
+          break;
+        case 'restoreState':
+          if (ctmStack.length > 0) ctm = ctmStack.pop()!;
+          break;
+        case 'concatenateMatrix':
+          if (op.matrix) ctm = this.multiplyMatrices(op.matrix, ctm);
+          break;
+        case 'pathMoveTo':
+          if (op.x !== undefined && op.y !== undefined) {
+            const p = this.transformPoint(op.x, op.y, ctm);
+            currentX = p.x;
+            currentY = p.y;
+            startPathX = p.x;
+            startPathY = p.y;
+          }
+          break;
+        case 'pathLineTo':
+          if (op.x !== undefined && op.y !== undefined) {
+            const p = this.transformPoint(op.x, op.y, ctm);
+            lines.push(this.createLine(currentX, currentY, p.x, p.y));
+            currentX = p.x;
+            currentY = p.y;
+          }
+          break;
+        case 'pathRect':
+          if (op.x !== undefined && op.y !== undefined && op.width !== undefined && op.height !== undefined) {
+            const p1 = this.transformPoint(op.x, op.y, ctm);
+            const p2 = this.transformPoint(op.x + op.width, op.y + op.height, ctm);
+            
+            lines.push(this.createLine(p1.x, p1.y, p2.x, p1.y)); // bottom
+            lines.push(this.createLine(p2.x, p1.y, p2.x, p2.y)); // right
+            lines.push(this.createLine(p2.x, p2.y, p1.x, p2.y)); // top
+            lines.push(this.createLine(p1.x, p2.y, p1.x, p1.y)); // left
+          }
+          break;
+        case 'pathClose':
+          if (currentX !== startPathX || currentY !== startPathY) {
+            lines.push(this.createLine(currentX, currentY, startPathX, startPathY));
+          }
+          break;
+      }
     }
 
-    return this.organizeTextElements(positionedTexts);
+    return lines;
+  }
+
+  private transformPoint(x: number, y: number, m: TextMatrix): { x: number; y: number } {
+    return {
+      x: x * m.a + y * m.c + m.e,
+      y: x * m.b + y * m.d + m.f,
+    };
+  }
+
+  private createLine(x1: number, y1: number, x2: number, y2: number): LineSegment {
+    return {
+      x1, y1, x2, y2,
+      isHorizontal: Math.abs(y1 - y2) < 0.1,
+      isVertical: Math.abs(x1 - x2) < 0.1,
+    };
   }
 
   /**

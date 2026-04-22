@@ -11,6 +11,7 @@
  */
 
 import type { TextElement } from '../models/TextElement';
+import type { Page } from '../models/Page';
 import type { MarkdownNode } from '../models/MarkdownNode';
 import { createTableNode } from '../models/MarkdownNode';
 import type { MarkdownTransformer, TransformationResult } from './MarkdownTransformer';
@@ -85,14 +86,15 @@ export class TableTransformer implements MarkdownTransformer {
     return elements.length >= 4;
   }
 
-  transform(elements: TextElement[], _allElements: TextElement[]): TransformationResult {
+  transform(elements: TextElement[], page: Page): TransformationResult {
     const config: DetectionConfig = {
       ...DEFAULT_DETECTION_CONFIG,
       tolerance: this.config.tolerance ?? DEFAULT_DETECTION_CONFIG.tolerance,
     };
 
-    // Run all detectors via registry
-    let tables = this.registry.detectAll(elements, config);
+    // Run all detectors via registry, now passing physical lines
+    let tables = this.registry.detectAll(elements, config, page.lines);
+
     
     // Filter by confidence and minimum physical requirements
     const minConfidenceThreshold = this.config.minConfidence ?? 0.4;

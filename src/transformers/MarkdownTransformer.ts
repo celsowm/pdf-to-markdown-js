@@ -1,5 +1,7 @@
 import type { TextElement } from '../models/TextElement';
+import type { Page } from '../models/Page';
 import type { MarkdownNode } from '../models/MarkdownNode';
+import type { Page } from '../models/Page';
 
 export interface TransformationResult {
   readonly nodes: MarkdownNode[];
@@ -14,11 +16,11 @@ export interface TransformationResult {
 export interface MarkdownTransformer {
   /**
    * Transforms an array of TextElement into MarkdownNode array.
-   * @param elements The text elements to transform
-   * @param allElements All text elements on the page (for context)
+   * @param elements The text elements to transform (those not yet consumed)
+   * @param page The full page context
    * @returns Transformation result including nodes and consumed elements
    */
-  transform(elements: TextElement[], allElements: TextElement[]): TransformationResult;
+  transform(elements: TextElement[], page: Page): TransformationResult;
 
   /**
    * Checks if this transformer can handle the given elements.
