@@ -3,10 +3,6 @@ name: Deploy Playground to GitHub Pages
 on:
   push:
     branches: [main, master]
-    paths:
-      - 'playground/**'
-      - 'dist/**'
-      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 permissions:
