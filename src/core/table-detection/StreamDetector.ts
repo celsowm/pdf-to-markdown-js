@@ -20,7 +20,6 @@ import type {
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
 import type { LineSegment, FillRegion } from '../TextExtractor';
-import type { LineSegment, FillRegion } from '../TextExtractor';
 import { TableUtils } from './TableUtils';
 
 export class StreamDetector implements ITableDetector {
@@ -44,7 +43,7 @@ export class StreamDetector implements ITableDetector {
     if (elements.length < 4) return [];
 
     // Group elements into potential rows first to avoid mixing tables
-    const allRows = this.groupByY(elements, config.tolerance);
+    const allRows = TableUtils.groupElementsByY([...elements], config.tolerance);
     
     // Partition rows into table candidates
     const candidates = this.partitionRows(allRows, config.tolerance);
@@ -100,23 +99,6 @@ export class StreamDetector implements ITableDetector {
    */
   private findColumnBoundaries(elements: ReadonlyArray<TextElement>, tolerance: number): number[] {
     return TableUtils.findGutters([...elements], tolerance);
-  }
-
-  private groupByY(elements: ReadonlyArray<TextElement>, tolerance: number): TextElement[][] {
-    const sorted = [...elements].sort((a, b) => b.y - a.y);
-    const rows: TextElement[][] = [];
-
-    for (const el of sorted) {
-      const existingRow = rows.find(r => Math.abs(r[0].y - el.y) <= tolerance);
-      if (existingRow) {
-        existingRow.push(el);
-      } else {
-        rows.push([el]);
-      }
-    }
-    
-    rows.forEach(r => r.sort((a, b) => a.x - b.x));
-    return rows;
   }
 
   private partitionRows(rows: TextElement[][], tolerance: number): TextElement[][][] {

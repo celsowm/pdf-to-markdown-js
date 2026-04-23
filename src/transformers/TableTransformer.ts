@@ -23,7 +23,8 @@ import type {
 import {
   createStandardRegistry,
   DEFAULT_DETECTION_CONFIG,
-  TableUtils
+  TableUtils,
+  LAYOUT_CONSTANTS
 } from '../core/table-detection';
 
 /**
@@ -93,48 +94,69 @@ export class TableTransformer implements MarkdownTransformer {
       tolerance: this.config.tolerance ?? DEFAULT_DETECTION_CONFIG.tolerance,
     };
 
+    const binSize = LAYOUT_CONSTANTS.PROJECTION_BIN_SIZE;
+
     // Phase 3: Macro-partitioning using Virtual Grid (Projection Profiles)
     // 1. Find vertical blocks (horizontal bands of text)
-    const yProfile = TableUtils.createProjectionProfile(elements, 'y', 5);
-    const yBlocks = TableUtils.findBlocks(yProfile, 5, 40, 4); 
+    const yProfile = TableUtils.createProjectionProfile(elements, 'y', binSize);
+    const yBlocks = TableUtils.findBlocks(
+      yProfile, 
+      binSize, 
+      LAYOUT_CONSTANTS.MIN_BLOCK_HEIGHT, 
+      Math.ceil(LAYOUT_CONSTANTS.MIN_BLOCK_GAP_Y / binSize)
+    ); 
 
     const allDetectedTables: DetectedTable[] = [];
+    const elementsInMacroBlocks = new Set<TextElement>();
 
     if (yBlocks.length > 0) {
       const pageElements = [...elements];
       const minY = Math.min(...pageElements.map(el => el.y - el.height));
-      const totalBins = yProfile.length;
 
       for (const yBlock of yBlocks) {
-        // Blocks are indices in yProfile. Convert back to Y coordinates
-        // Profile is bottom-up (minY is bin 0)
-        const y2 = minY + yBlock.start * 5;
-        const y1 = minY + (yBlock.end + 1) * 5;
+        const y2 = minY + yBlock.start * binSize;
+        const y1 = minY + (yBlock.end + 1) * binSize;
         
-        const bandElements = pageElements.filter(el => el.y <= y1 + 10 && (el.y - el.height) >= y2 - 10);
+        const pad = LAYOUT_CONSTANTS.BLOCK_PADDING;
+        const bandElements = pageElements.filter(el => el.y <= y1 + pad && (el.y - el.height) >= y2 - pad);
         if (bandElements.length < 4) continue;
 
-        // 2. In each band, find horizontal blocks (side-by-side tables)
-        const xProfile = TableUtils.createProjectionProfile(bandElements, 'x', 5);
-        const xBlocks = TableUtils.findBlocks(xProfile, 5, 50, 8); 
+        const xProfile = TableUtils.createProjectionProfile(bandElements, 'x', binSize);
+        const xBlocks = TableUtils.findBlocks(
+          xProfile, 
+          binSize, 
+          LAYOUT_CONSTANTS.MIN_BLOCK_WIDTH, 
+          Math.ceil(LAYOUT_CONSTANTS.MIN_BLOCK_GAP_X / binSize)
+        ); 
 
         if (xBlocks.length > 0) {
           const minX = Math.min(...bandElements.map(el => el.x));
           for (const xBlock of xBlocks) {
-            const bx1 = minX + xBlock.start * 5;
-            const bx2 = minX + (xBlock.end + 1) * 5;
+            const bx1 = minX + xBlock.start * binSize;
+            const bx2 = minX + (xBlock.end + 1) * binSize;
             
-            const candidateElements = bandElements.filter(el => el.x >= bx1 - 10 && (el.x + el.width) <= bx2 + 10);
+            const candidateElements = bandElements.filter(el => el.x >= bx1 - pad && (el.x + el.width) <= bx2 + pad);
             if (candidateElements.length < 4) continue;
 
             // Run detectors on this specific macro-region
             const bandTables = this.registry.detectAll(candidateElements, config, page.lines, page.fillRegions);
-            allDetectedTables.push(...bandTables);
+            if (bandTables.length > 0) {
+              allDetectedTables.push(...bandTables);
+              candidateElements.forEach(el => elementsInMacroBlocks.add(el));
+            }
           }
         }
       }
     }
 
+    // Performance Optimization: Subtract and Detect
+    // Run global detectors only on elements NOT already captured by macro-blocks
+    const remainingElements = elements.filter(el => !elementsInMacroBlocks.has(el));
+    if (remainingElements.length >= 4) {
+      const globalTables = this.registry.detectAll(remainingElements, config, page.lines, page.fillRegions);
+      allDetectedTables.push(...globalTables);
+    }
+    
     // Use ONLY partitioned tables to avoid merging side-by-side tables
     let tables = this.registry.mergeOverlappingTables(allDetectedTables);
     
@@ -196,7 +218,8 @@ export class TableTransformer implements MarkdownTransformer {
       const totalCells = assignment.table.rows * assignment.table.cols;
 
       // For small tables, require very high density (often false positives from paragraphs)
-      const minDensity = totalCells <= 12 ? 0.75 : 0.4;
+      const isSmall = totalCells <= LAYOUT_CONSTANTS.SMALL_TABLE_THRESHOLD;
+      const minDensity = isSmall ? LAYOUT_CONSTANTS.MIN_DENSITY_SMALL : LAYOUT_CONSTANTS.MIN_DENSITY_LARGE;
 
       if (filledCells / totalCells < minDensity) {
         continue; // Don't consume these elements, let other transformers handle them
@@ -369,7 +392,7 @@ export class TableTransformer implements MarkdownTransformer {
     }
 
     // Still check if the distance is reasonable
-    if (minDistance > 50) {
+    if (minDistance > LAYOUT_CONSTANTS.MAX_CELL_DISTANCE) {
       return null;
     }
 

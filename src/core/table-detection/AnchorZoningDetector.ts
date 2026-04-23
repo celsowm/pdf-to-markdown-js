@@ -80,7 +80,7 @@ export class AnchorZoningDetector implements ITableDetector {
       const zoneElements = elems.filter(el => el.y >= minY && el.y <= maxY);
       if (zoneElements.length < 4) continue;
 
-      const rows = this.groupElementsByY(zoneElements, config.tolerance);
+      const rows = TableUtils.groupElementsByY(zoneElements, config.tolerance);
       const colBoundaries = TableUtils.findGutters(zoneElements, config.tolerance);
 
       if (colBoundaries.length < 3) continue;
@@ -137,30 +137,5 @@ export class AnchorZoningDetector implements ITableDetector {
       if (!found) clusters.push([anchor]);
     }
     return clusters;
-  }
-
-  private groupElementsByY(elements: TextElement[], tolerance: number): TextElement[][] {
-    const sorted = [...elements].sort((a, b) => b.y - a.y);
-    const rows: TextElement[][] = [];
-
-    for (const el of sorted) {
-      let placed = false;
-      for (const row of rows) {
-        if (Math.abs(row[0].y - el.y) <= tolerance * 2) {
-          row.push(el);
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        rows.push([el]);
-      }
-    }
-
-    for (const row of rows) {
-      row.sort((a, b) => a.x - b.x);
-    }
-
-    return rows;
   }
 }

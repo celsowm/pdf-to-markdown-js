@@ -203,4 +203,36 @@ export class TableUtils {
 
     return blocks;
   }
+
+  /**
+   * Groups elements into rows based on their Y coordinates.
+   */
+  static groupElementsByY(elements: TextElement[], tolerance: number): TextElement[][] {
+    if (elements.length === 0) return [];
+
+    const sorted = [...elements].sort((a, b) => b.y - a.y);
+    const rows: TextElement[][] = [];
+
+    for (const el of sorted) {
+      let placed = false;
+      for (const row of rows) {
+        // Use center Y for more stable grouping
+        const rowY = row[0].y;
+        if (Math.abs(rowY - el.y) <= tolerance) {
+          row.push(el);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        rows.push([el]);
+      }
+    }
+
+    for (const row of rows) {
+      row.sort((a, b) => a.x - b.x);
+    }
+
+    return rows;
+  }
 }

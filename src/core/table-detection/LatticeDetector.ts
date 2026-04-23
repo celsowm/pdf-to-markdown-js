@@ -18,7 +18,6 @@ import type {
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
 import type { LineSegment, FillRegion } from '../TextExtractor';
-import type { LineSegment, FillRegion } from '../TextExtractor';
 import { TableUtils } from './TableUtils';
 
 /**
@@ -41,6 +40,7 @@ export class LatticeDetector implements ITableDetector {
     elements: ReadonlyArray<TextElement>,
     config: DetectionConfig,
     lines?: ReadonlyArray<LineSegment>,
+    fillRegions?: ReadonlyArray<FillRegion>,
   ): DetectedTable[] {
     if (elements.length < config.minRows * config.minCols) {
       return [];
@@ -55,7 +55,7 @@ export class LatticeDetector implements ITableDetector {
     const tables: DetectedTable[] = [];
 
     // Group elements by row
-    const allRows = this.groupByYPosition(elements, config.tolerance);
+    const allRows = TableUtils.groupElementsByY([...elements], config.tolerance);
 
     // Partition rows into separate table candidates based on gaps
     const tableCandidates = this.partitionRows(allRows, config.tolerance);
@@ -131,29 +131,6 @@ export class LatticeDetector implements ITableDetector {
   }
 
   /**
-   * Groups text elements by Y position (rows).
-   */
-  private groupByYPosition(
-    elements: ReadonlyArray<TextElement>,
-    tolerance: number,
-  ): TextElement[][] {
-    const sorted = [...elements].sort((a, b) => b.y - a.y);
-    const rows: TextElement[][] = [];
-
-    for (const element of sorted) {
-      const existingRow = rows.find((row) => Math.abs(row[0].y - element.y) <= tolerance);
-
-      if (existingRow) {
-        existingRow.push(element);
-      } else {
-        rows.push([element]);
-      }
-    }
-
-    return rows;
-  }
-
-  /**
    * Finds common column X positions across rows.
    */
   private findCommonColumnPositions(rows: TextElement[][], tolerance: number): number[] {
@@ -211,13 +188,14 @@ export class LatticeDetector implements ITableDetector {
     if (xClusters.length < 2 || yClusters.length < 2) return [];
 
     const colBoundaries = xClusters.map(c => c.center).sort((a, b) => a - b);
-    // const rowBoundaries = yClusters.map(c => c.center).sort((a, b) => b - a);
 
     // Build the table using the grid formed by these lines
+    const rows = TableUtils.groupElementsByY([...elements], config.tolerance);
+    
     const table = TableUtils.buildTableFromGrid(
       `lattice-v2-${Date.now()}`,
       this.getName(),
-      this.groupByYPosition(elements, config.tolerance),
+      rows,
       colBoundaries,
       config
     );
