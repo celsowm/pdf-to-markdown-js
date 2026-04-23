@@ -4,7 +4,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
   root: 'playground',
-  base: '/pdf-to-markdown-js/', // Use repository path for GitHub Pages
+  base: './', // Use relative paths for assets to work in subfolders
   plugins: [
     nodePolyfills({
       protocolImports: true,
@@ -17,7 +17,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist',
+    outDir: 'dist/playground',
     emptyOutDir: true,
     rollupOptions: {
       input: {

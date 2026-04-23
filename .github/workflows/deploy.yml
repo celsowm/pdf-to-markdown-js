@@ -34,6 +34,8 @@ jobs:
         run: |
           npm run build
           npm run build:playground
+          # Create a redirect index.html at the root
+          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=https://github.com/celsowm/pdf-to-markdown-js"><script>window.location.href="https://github.com/celsowm/pdf-to-markdown-js"</script></head><body>Redirecting to <a href="https://github.com/celsowm/pdf-to-markdown-js">GitHub</a>...</body></html>' > ./playground/dist/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
