@@ -1,5 +1,6 @@
 import type { PdfReader, XRefEntry } from '../utils/PdfReader';
-import { ObjectParser, PdfObject, PdfDictionary, PdfStream } from '../core/ObjectParser';
+import { ObjectParser } from '../core/ObjectParser';
+import type { PdfObject, PdfDictionary, PdfStream } from '../core/ObjectParser';
 import { CMapParser } from '../utils/CMapParser';
 import { logger } from '../utils/Logger';
 

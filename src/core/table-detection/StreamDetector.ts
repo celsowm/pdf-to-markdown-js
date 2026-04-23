@@ -39,6 +39,7 @@ export class StreamDetector implements ITableDetector {
     elements: ReadonlyArray<TextElement>,
     config: DetectionConfig,
     _lines?: ReadonlyArray<LineSegment>,
+    _fillRegions?: ReadonlyArray<FillRegion>,
   ): DetectedTable[] {
     if (elements.length < 4) return [];
 

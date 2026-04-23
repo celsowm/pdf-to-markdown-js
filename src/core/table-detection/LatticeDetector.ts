@@ -40,7 +40,7 @@ export class LatticeDetector implements ITableDetector {
     elements: ReadonlyArray<TextElement>,
     config: DetectionConfig,
     lines?: ReadonlyArray<LineSegment>,
-    fillRegions?: ReadonlyArray<FillRegion>,
+    _fillRegions?: ReadonlyArray<FillRegion>,
   ): DetectedTable[] {
     if (elements.length < config.minRows * config.minCols) {
       return [];

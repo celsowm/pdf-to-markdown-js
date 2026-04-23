@@ -2,8 +2,8 @@ import type { PdfReader, XRefEntry } from '../utils/PdfReader';
 import type { PdfObject, PdfDictionary, PdfStream } from '../core/ObjectParser';
 import { ObjectParser } from '../core/ObjectParser';
 import { ContentStreamParser } from '../core/ContentStreamParser';
-import { TextExtractor, LineSegment, FillRegion } from '../core/TextExtractor';
-import type { PdfDocument } from '../models/PdfDocument';
+import { TextExtractor } from '../core/TextExtractor';
+import type { LineSegment, FillRegion } from '../core/TextExtractor';
 import { createPdfDocument } from '../models/PdfDocument';
 import type { Page } from '../models/Page';
 import { createPage } from '../models/Page';
@@ -33,7 +33,7 @@ export class PdfParser {
   /**
    * Parses the PDF document and returns the Markdown AST.
    */
-  parse(): MarkdownNode {
+  async parse(): Promise<MarkdownNode> {
     logger.info('Starting PDF parsing...');
     
     // Parse PDF structure
@@ -50,7 +50,7 @@ export class PdfParser {
     const document = createPdfDocument(pages, metadata);
 
     // Convert to Markdown AST via orchestrator
-    const result = this.orchestrator.orchestrate(document);
+    const result = await this.orchestrator.orchestrate(document);
     logger.info('PDF parsing completed');
     return result;
   }
@@ -120,7 +120,8 @@ export class PdfParser {
 
       if (isDictionary(dict)) {
         const type = this.resourceManager.getDictionaryEntry(dict, '/Type');
-        if (isString(type) && type.value === '/Page') {
+        
+        if (isName(type) && (type.value === 'Page' || type.value === '/Page')) {
           pageRefs.push(objNum);
           return;
         }
@@ -264,6 +265,6 @@ function isStream(obj: PdfObject): obj is PdfStream {
 function isNumber(obj: PdfObject): obj is { type: 'number'; value: number } {
   return obj && obj.type === 'number';
 }
-function isString(obj: PdfObject): obj is { type: 'string'; value: string } {
-  return obj && obj.type === 'string';
+function isName(obj: PdfObject): obj is { type: 'name'; value: string } {
+  return obj && obj.type === 'name';
 }

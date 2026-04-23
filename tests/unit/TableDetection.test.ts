@@ -185,7 +185,7 @@ describe('Table Detection System', () => {
   });
 
   describe('Integration with TableTransformer', () => {
-    it('should detect and convert table to markdown', () => {
+    it('should detect and convert table to markdown', async () => {
       const transformer = new TableTransformer();
 
       const elements = createTextElements([
@@ -197,7 +197,7 @@ describe('Table Detection System', () => {
       const canTransform = transformer.canTransform(elements);
       expect(canTransform).toBe(true);
 
-      const { nodes } = transformer.transform(elements, { index: 0, width: 612, height: 792, textElements: elements, lines: [], fillRegions: [] });
+      const { nodes } = await transformer.transform(elements, { index: 0, width: 612, height: 792, textElements: elements, lines: [], fillRegions: [] });
       expect(nodes.length).toBeGreaterThan(0);
     });
 

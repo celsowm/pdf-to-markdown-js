@@ -18,9 +18,9 @@ export interface MarkdownTransformer {
    * Transforms an array of TextElement into MarkdownNode array.
    * @param elements The text elements to transform (those not yet consumed)
    * @param page The full page context
-   * @returns Transformation result including nodes and consumed elements
+   * @returns Promise resolving to transformation result including nodes and consumed elements
    */
-  transform(elements: TextElement[], page: Page): TransformationResult;
+  transform(elements: TextElement[], page: Page): Promise<TransformationResult>;
 
   /**
    * Checks if this transformer can handle the given elements.

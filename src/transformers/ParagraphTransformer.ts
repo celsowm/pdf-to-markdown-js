@@ -18,7 +18,7 @@ export class ParagraphTransformer implements MarkdownTransformer {
     return true;
   }
 
-  transform(elements: TextElement[], page: Page): TransformationResult {
+  async transform(elements: TextElement[], _page: Page): Promise<TransformationResult> {
     if (elements.length === 0) {
       return { nodes: [], consumedElements: [] };
     }

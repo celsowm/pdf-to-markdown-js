@@ -207,7 +207,7 @@ export class VisualSignatureDetector implements ITableDetector {
     return 0.9;
   }
 
-  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig, lines?: ReadonlyArray<LineSegment>, fillRegions?: ReadonlyArray<FillRegion>): DetectedTable[] {
+  detect(elements: ReadonlyArray<TextElement>, config: DetectionConfig, _lines?: ReadonlyArray<LineSegment>, _fillRegions?: ReadonlyArray<FillRegion>): DetectedTable[] {
     if (elements.length < 4) {
       return [];
     }

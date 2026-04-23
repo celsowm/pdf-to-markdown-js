@@ -40,7 +40,7 @@ describe('InlineFormatterTransformer', () => {
   });
 
   describe('transform', () => {
-    it('should transform bold text with ** markers', () => {
+    it('should transform bold text with ** markers', async () => {
       const elements: TextElement[] = [
         {
           text: 'Bold Text',
@@ -58,7 +58,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const { nodes } = transformer.transform(elements, elements);
+      const { nodes } = await transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0].type).toBe('text');
@@ -69,7 +69,7 @@ describe('InlineFormatterTransformer', () => {
       });
     });
 
-    it('should transform italic text with * markers', () => {
+    it('should transform italic text with * markers', async () => {
       const elements: TextElement[] = [
         {
           text: 'Italic Text',
@@ -87,7 +87,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const { nodes } = transformer.transform(elements, elements);
+      const { nodes } = await transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0].type).toBe('text');
@@ -98,7 +98,7 @@ describe('InlineFormatterTransformer', () => {
       });
     });
 
-    it('should transform strikethrough text with ~~ markers', () => {
+    it('should transform strikethrough text with ~~ markers', async () => {
       const elements: TextElement[] = [
         {
           text: 'Strike Text',
@@ -116,7 +116,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const { nodes } = transformer.transform(elements, elements);
+      const { nodes } = await transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0].type).toBe('text');
@@ -127,7 +127,7 @@ describe('InlineFormatterTransformer', () => {
       });
     });
 
-    it('should transform bold and italic text together', () => {
+    it('should transform bold and italic text together', async () => {
       const elements: TextElement[] = [
         {
           text: 'Bold Italic',
@@ -145,7 +145,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const { nodes } = transformer.transform(elements, elements);
+      const { nodes } = await transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0].type).toBe('text');
@@ -157,7 +157,7 @@ describe('InlineFormatterTransformer', () => {
       });
     });
 
-    it('should handle multiple elements with different formatting', () => {
+    it('should handle multiple elements with different formatting', async () => {
       const elements: TextElement[] = [
         {
           text: 'Bold',
@@ -203,7 +203,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const { nodes } = transformer.transform(elements, elements);
+      const { nodes } = await transformer.transform(elements, elements);
 
       expect(nodes).toHaveLength(3);
       expect(nodes[0].metadata?.formatting?.bold).toBe(true);
@@ -211,7 +211,7 @@ describe('InlineFormatterTransformer', () => {
       expect(nodes[2].metadata?.formatting).toEqual(DEFAULT_FORMATTING);
     });
 
-    it('should detect bold from font name', () => {
+    it('should detect bold from font name', async () => {
       const elements: TextElement[] = [
         {
           text: 'Test',
@@ -229,13 +229,13 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const { nodes } = transformer.transform(elements, elements);
+      const { nodes } = await transformer.transform(elements, elements);
 
       // The transformer should detect that the font name contains 'bold'
       expect(nodes[0].metadata?.formatting?.bold).toBe(false); // Note: transformer uses element properties, not font name directly
     });
 
-    it('should detect strikethrough from font name', () => {
+    it('should detect strikethrough from font name', async () => {
       const elements: TextElement[] = [
         {
           text: 'Strike',
@@ -253,7 +253,7 @@ describe('InlineFormatterTransformer', () => {
         },
       ];
 
-      const { nodes } = transformer.transform(elements, elements);
+      const { nodes } = await transformer.transform(elements, elements);
 
       expect(nodes[0].metadata?.formatting?.strike).toBe(true);
     });

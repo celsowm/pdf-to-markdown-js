@@ -24,5 +24,6 @@ export { VisualSignatureDetector } from './VisualSignatureDetector';
 export { EntropyDetector } from './EntropyDetector';
 export { BackgroundDetector } from './BackgroundDetector';
 export { TableUtils } from './TableUtils';
+export { LAYOUT_CONSTANTS } from './LayoutConstants';
 
 export { DetectorRegistry, createStandardRegistry } from './DetectorRegistry';

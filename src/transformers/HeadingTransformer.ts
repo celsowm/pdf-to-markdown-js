@@ -33,7 +33,7 @@ export class HeadingTransformer implements MarkdownTransformer {
     return elements.some((el) => el.fontSize >= HEADING_THRESHOLDS.h6 || el.isBold);
   }
 
-  transform(elements: TextElement[], page: Page): TransformationResult {
+  async transform(elements: TextElement[], page: Page): Promise<TransformationResult> {
     const nodes: MarkdownNode[] = [];
     const consumedElements: TextElement[] = [];
     const positions: number[] = [];

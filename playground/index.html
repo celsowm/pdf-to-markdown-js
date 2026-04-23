@@ -152,6 +152,27 @@
             <!-- Settings Tab -->
             <div class="tab-content" id="tab-settings">
               <div class="settings-group">
+                <h3>Machine Learning (OCR)</h3>
+                <div class="setting-item">
+                  <div class="checkbox-item">
+                    <label>
+                      <input type="checkbox" id="enableOcr"> Use OCR (Xenova/nougat-small)
+                    </label>
+                  </div>
+                  <p class="help-text">Experimental: Processes PDF pages as images. High quality for complex tables but slower. Downloads ~250MB on first use.</p>
+                </div>
+                <div id="ocrStatusContainer" class="ocr-status hidden">
+                  <div class="status-header">
+                    <span id="ocrStatusText">Loading model...</span>
+                    <span id="ocrStatusPercent">0%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div id="ocrProgressBar" class="progress-bar"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group">
                 <h3>Table Extraction</h3>
                 <div class="setting-item">
                   <label for="tableTolerance">Tolerance</label>

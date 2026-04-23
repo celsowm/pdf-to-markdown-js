@@ -27,7 +27,7 @@ export class ListTransformer implements MarkdownTransformer {
     return this.isListPattern(elements);
   }
 
-  transform(elements: TextElement[], page: Page): TransformationResult {
+  async transform(elements: TextElement[], _page: Page): Promise<TransformationResult> {
     const nodes: MarkdownNode[] = [];
     const isOrdered = this.isOrderedList(elements);
     const listNode = createListNode(isOrdered);

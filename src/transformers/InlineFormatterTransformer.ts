@@ -18,7 +18,7 @@ export class InlineFormatterTransformer implements MarkdownTransformer {
     return elements.length > 0;
   }
 
-  transform(elements: TextElement[], page: Page): TransformationResult {
+  async transform(elements: TextElement[], _page: Page): Promise<TransformationResult> {
     const nodes: MarkdownNode[] = [];
 
     for (const element of elements) {

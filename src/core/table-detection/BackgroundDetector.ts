@@ -91,7 +91,7 @@ export class BackgroundDetector implements ITableDetector {
     return 0.8;
   }
 
-  private clusterBands(regions: FillRegion[], tolerance: number): FillRegion[][] {
+  private clusterBands(regions: FillRegion[], _tolerance: number): FillRegion[][] {
     const sorted = [...regions].sort((a, b) => b.y - a.y);
     const clusters: FillRegion[][] = [];
     

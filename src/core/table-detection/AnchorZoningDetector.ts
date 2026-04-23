@@ -17,18 +17,6 @@ interface AnchorMatch {
 }
 
 /**
- * Represents a zoning region around an anchor.
- */
-interface AnchorZone {
-  readonly anchor: AnchorMatch;
-  readonly x1: number;
-  readonly y1: number;
-  readonly x2: number;
-  readonly y2: number;
-  readonly elements: TextElement[];
-}
-
-/**
  * Default anchor keywords commonly found in tables/forms.
  */
 const DEFAULT_ANCHOR_KEYWORDS = [

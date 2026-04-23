@@ -7,6 +7,13 @@ import { PdfToMarkdown } from '@lib/index';
   let currentFile = null;
   let currentUrl = null;
   let markdownOutput = '';
+  
+  // OCR Model State
+  let processor = null;
+  let tokenizer = null;
+  let model = null;
+  let isModelLoading = false;
+  let currentPdfData = null; // Buffer for OCR processing
 
   // DOM Elements
   const elements = {
@@ -59,6 +66,11 @@ import { PdfToMarkdown } from '@lib/index';
     tableTolerance: document.getElementById('tableTolerance'),
     toleranceValue: document.getElementById('toleranceValue'),
     detectorCheckboxes: document.querySelectorAll('input[data-detector]'),
+    enableOcr: document.getElementById('enableOcr'),
+    ocrStatusContainer: document.getElementById('ocrStatusContainer'),
+    ocrStatusText: document.getElementById('ocrStatusText'),
+    ocrStatusPercent: document.getElementById('ocrStatusPercent'),
+    ocrProgressBar: document.getElementById('ocrProgressBar'),
   };
 
   /**
@@ -72,6 +84,89 @@ import { PdfToMarkdown } from '@lib/index';
     setupOutputTabs();
     setupActions();
     setupSettings();
+    setupOcrSettings();
+  }
+
+  /**
+   * Setup OCR settings
+   */
+  function setupOcrSettings() {
+    elements.enableOcr.addEventListener('change', async () => {
+      if (elements.enableOcr.checked) {
+        await loadOcrModel();
+      } else {
+        elements.ocrStatusContainer.classList.add('hidden');
+      }
+    });
+  }
+
+  /**
+   * Load the Transformers.js OCR model
+   */
+  async function loadOcrModel() {
+    if (processor && tokenizer && model) return;
+    if (isModelLoading) return;
+
+    isModelLoading = true;
+    elements.ocrStatusContainer.classList.remove('hidden');
+    elements.ocrStatusText.textContent = 'Loading Nougat model...';
+    elements.ocrStatusPercent.textContent = '0%';
+    elements.ocrProgressBar.style.width = '0%';
+
+    try {
+      const { AutoProcessor, AutoModelForVision2Seq, AutoTokenizer, env } = 
+        await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4');
+
+      // Setup proxy if needed or just use default
+      env.allowLocalModels = false;
+
+      const progressStats = new Map();
+      const progress_callback = (data) => {
+        if (data.status === 'initiate') {
+          progressStats.set(data.file, 0);
+        } else if (data.status === 'progress') {
+          progressStats.set(data.file, data.progress);
+        } else if (data.status === 'done') {
+          progressStats.set(data.file, 100);
+        }
+
+        if (progressStats.size > 0) {
+          let total = 0;
+          for (let p of progressStats.values()) total += p;
+          const avg = total / progressStats.size;
+          
+          elements.ocrStatusPercent.textContent = `${Math.round(avg)}%`;
+          elements.ocrProgressBar.style.width = `${avg}%`;
+        }
+      };
+
+      const MODEL_ID = 'Xenova/nougat-small';
+      
+      // Load components in parallel
+      [processor, tokenizer, model] = await Promise.all([
+        AutoProcessor.from_pretrained(MODEL_ID, { progress_callback }),
+        AutoTokenizer.from_pretrained(MODEL_ID, { progress_callback }),
+        AutoModelForVision2Seq.from_pretrained(MODEL_ID, { progress_callback })
+      ]);
+
+      elements.ocrStatusText.textContent = 'Model ready';
+      elements.ocrStatusPercent.textContent = '';
+      elements.ocrProgressBar.style.width = '100%';
+      
+      setTimeout(() => {
+        if (elements.enableOcr.checked) {
+          elements.ocrStatusText.textContent = 'OCR is active';
+        }
+      }, 2000);
+
+    } catch (error) {
+      console.error('Failed to load OCR model:', error);
+      elements.ocrStatusText.textContent = 'Error loading model';
+      elements.enableOcr.checked = false;
+      showError(`OCR Error: ${error.message}. Check console for details.`);
+    } finally {
+      isModelLoading = false;
+    }
   }
 
   /**
@@ -222,10 +317,9 @@ import { PdfToMarkdown } from '@lib/index';
 
     try {
       const arrayBuffer = await currentFile.arrayBuffer();
-      const options = getOptions();
-      
-      // Convert ArrayBuffer to binary string for PdfReader
       const binaryString = arrayBufferToBinary(arrayBuffer);
+      
+      const options = await getOptions(binaryString);
       const markdown = await PdfToMarkdown.fromBinary(binaryString, options);
 
       showOutput(markdown);
@@ -242,8 +336,20 @@ import { PdfToMarkdown } from '@lib/index';
     showLoading();
 
     try {
-      const options = getOptions();
-      const markdown = await PdfToMarkdown.fromUrl(currentUrl, options);
+      let markdown;
+      if (elements.enableOcr.checked) {
+        // We need the data locally to pass to OcrProvider
+        const response = await fetch(currentUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const binaryString = arrayBufferToBinary(arrayBuffer);
+        
+        const options = await getOptions(binaryString);
+        markdown = await PdfToMarkdown.fromBinary(binaryString, options);
+      } else {
+        const options = await getOptions();
+        markdown = await PdfToMarkdown.fromUrl(currentUrl, options);
+      }
+      
       showOutput(markdown);
     } catch (error) {
       console.error('Conversion error:', error);
@@ -284,7 +390,7 @@ import { PdfToMarkdown } from '@lib/index';
   /**
    * Get current conversion options from UI
    */
-  function getOptions() {
+  async function getOptions(pdfBinary) {
     const tolerance = parseFloat(elements.tableTolerance.value);
     const weights = Array.from(elements.detectorCheckboxes).map(cb => ({
       name: cb.dataset.detector,
@@ -292,12 +398,60 @@ import { PdfToMarkdown } from '@lib/index';
       weight: 0.5 // Default weight
     }));
 
-    return {
+    const options = {
       table: {
         tolerance: tolerance,
         registry: {
           weights: weights
         }
+      }
+    };
+
+    if (elements.enableOcr.checked && processor && model && tokenizer) {
+      options.ocr = {
+        provider: await getOcrProvider(pdfBinary),
+        useForPages: true // Use for whole pages in playground
+      };
+    }
+
+    return options;
+  }
+
+  /**
+   * Create an OCR provider that renders PDF pages and runs inference
+   */
+  async function getOcrProvider(pdfBinary) {
+    // We need pdfjs to render the page to canvas
+    const pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+
+    const loadingTask = pdfjsLib.getDocument({ data: pdfBinary });
+    const pdf = await loadingTask.promise;
+
+    return {
+      async processRegion(pageIndex, region) {
+        const page = await pdf.getPage(pageIndex + 1);
+        const viewport = page.getViewport({ scale: 2.0 }); // High res for OCR
+        
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        
+        // Convert canvas to image for Transformers.js
+        const imageUrl = canvas.toDataURL('image/png');
+        const { RawImage } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4');
+        const image = await RawImage.read(imageUrl);
+
+        // Run OCR
+        elements.ocrStatusText.textContent = `Processing page ${pageIndex + 1}...`;
+        const inputs = await processor(image);
+        const outputs = await model.generate({ ...inputs, max_new_tokens: 1024 });
+        const decoded = tokenizer.batch_decode(outputs, { skip_special_tokens: true });
+        
+        return decoded[0].trim();
       }
     };
   }

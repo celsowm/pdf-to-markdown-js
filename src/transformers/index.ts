@@ -5,3 +5,4 @@ export { ParagraphTransformer } from './ParagraphTransformer';
 export { InlineFormatterTransformer } from './InlineFormatterTransformer';
 export { TableTransformer } from './TableTransformer';
 export type { TableTransformerConfig } from './TableTransformer';
+export { OcrTransformer } from './OcrTransformer';

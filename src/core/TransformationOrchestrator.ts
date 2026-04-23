@@ -24,11 +24,11 @@ export class TransformationOrchestrator {
   /**
    * Converts a PdfDocument to a root MarkdownNode.
    */
-  orchestrate(document: PdfDocument): MarkdownNode {
+  async orchestrate(document: PdfDocument): Promise<MarkdownNode> {
     const allNodes: MarkdownNode[] = [];
 
     for (const page of document.pages) {
-      const pageNodes = this.transformPage(page);
+      const pageNodes = await this.transformPage(page);
       allNodes.push(...pageNodes);
     }
 
@@ -38,7 +38,7 @@ export class TransformationOrchestrator {
   /**
    * Transforms a single page's elements into Markdown nodes.
    */
-  private transformPage(page: Page): MarkdownNode[] {
+  private async transformPage(page: Page): Promise<MarkdownNode[]> {
     const elements = page.textElements;
     if (elements.length === 0) {
       return [];
@@ -56,7 +56,7 @@ export class TransformationOrchestrator {
       }
 
       if (transformer.canTransform([...unusedElements])) {
-        const { nodes: newNodes, consumedElements, positions } = transformer.transform(
+        const { nodes: newNodes, consumedElements, positions } = await transformer.transform(
           [...unusedElements],
           page,
         );

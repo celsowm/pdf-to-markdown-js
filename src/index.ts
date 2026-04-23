@@ -6,8 +6,12 @@ import {
   ListTransformer,
   ParagraphTransformer,
   TableTransformer,
+  OcrTransformer,
+  InlineFormatterTransformer,
 } from './transformers';
+import type { MarkdownTransformer } from './transformers';
 import type { TableTransformerConfig } from './transformers';
+import type { OcrProvider } from './utils/ImageExtractor';
 
 /**
  * Configuration options for PdfToMarkdown.
@@ -17,6 +21,15 @@ export interface PdfToMarkdownOptions {
    * Configuration for table detection and extraction.
    */
   readonly table?: TableTransformerConfig;
+
+  /**
+   * Optional OCR provider for specialized extraction (e.g. via Transformers.js).
+   */
+  readonly ocr?: {
+    readonly provider: OcrProvider;
+    readonly useForTables?: boolean;
+    readonly useForPages?: boolean;
+  };
 }
 
 /**
@@ -89,18 +102,24 @@ export class PdfToMarkdown {
   /**
    * Internal conversion method.
    */
-  private static convert(pdfReader: PdfReader, options: PdfToMarkdownOptions = {}): string {
+  private static async convert(pdfReader: PdfReader, options: PdfToMarkdownOptions = {}): Promise<string> {
     // Create transformers (order matters - priority sorted)
-    const transformers = [
+    const transformers: MarkdownTransformer[] = [
       new HeadingTransformer(),
       new TableTransformer(options.table),
       new ListTransformer(),
+      new InlineFormatterTransformer(),
       new ParagraphTransformer(),
     ];
 
+    // Add OCR transformer if provider is present
+    if (options.ocr?.provider) {
+      transformers.push(new OcrTransformer(options.ocr.provider, options.ocr.useForPages));
+    }
+
     // Parse PDF
     const pdfParser = new PdfParser(pdfReader, transformers);
-    const markdownAst = pdfParser.parse();
+    const markdownAst = await pdfParser.parse();
 
     // Convert to markdown string
     const markdownWriter = new MarkdownWriter();
@@ -139,7 +158,9 @@ export { HeadingTransformer } from './transformers/HeadingTransformer';
 export { ListTransformer } from './transformers/ListTransformer';
 export { ParagraphTransformer } from './transformers/ParagraphTransformer';
 export { TableTransformer } from './transformers/TableTransformer';
+export { OcrTransformer } from './transformers/OcrTransformer';
 export type { TableTransformerConfig } from './transformers/TableTransformer';
+export type { OcrProvider } from './utils/ImageExtractor';
 
 export {
   DetectorRegistry,

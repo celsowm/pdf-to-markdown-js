@@ -25,7 +25,6 @@ import type {
 } from './TableTypes';
 import type { TextElement } from '../../models/TextElement';
 import type { LineSegment, FillRegion } from '../TextExtractor';
-import type { LineSegment, FillRegion } from '../TextExtractor';
 import { TableUtils } from './TableUtils';
 
 /**
@@ -67,6 +66,7 @@ export class SCADetector implements ITableDetector {
     elements: ReadonlyArray<TextElement>,
     config: DetectionConfig,
     _lines?: ReadonlyArray<LineSegment>,
+    _fillRegions?: ReadonlyArray<FillRegion>,
   ): DetectedTable[] {
     if (elements.length < 4) return [];
 

@@ -88,7 +88,7 @@ export class TableTransformer implements MarkdownTransformer {
     return elements.length >= 4;
   }
 
-  transform(elements: TextElement[], page: Page): TransformationResult {
+  async transform(elements: TextElement[], page: Page): Promise<TransformationResult> {
     const config: DetectionConfig = {
       ...DEFAULT_DETECTION_CONFIG,
       tolerance: this.config.tolerance ?? DEFAULT_DETECTION_CONFIG.tolerance,
