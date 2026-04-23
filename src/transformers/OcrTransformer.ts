@@ -37,7 +37,7 @@ export class OcrTransformer implements MarkdownTransformer {
 
     try {
       // Process the whole page region
-      const rawMarkdown = await this.provider.processRegion(page.pageIndex, {
+      const rawMarkdown = await this.provider.processRegion(page.index, {
         x1: 0,
         y1: 0,
         x2: page.width,

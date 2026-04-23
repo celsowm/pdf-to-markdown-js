@@ -22,6 +22,9 @@ npm-debug.log*
 .env
 .env.local
 
+# Playground distribution assets
+playground/public/dist/
+
 # Coverage
 coverage/
 

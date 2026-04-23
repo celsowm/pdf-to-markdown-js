@@ -1,7 +1,6 @@
 import type { TextElement } from '../models/TextElement';
 import type { Page } from '../models/Page';
 import type { MarkdownNode } from '../models/MarkdownNode';
-import type { Page } from '../models/Page';
 
 export interface TransformationResult {
   readonly nodes: MarkdownNode[];

@@ -74,17 +74,17 @@ async function build() {
 
     console.log(`✅ Minified file created at: ${MIN_FILE}\n`);
 
-    // Step 5: Copy minified browser version to playground/dist
-    console.log('📦 Copying browser version to playground/dist...');
-    const PLAYGROUND_DIST = path.join(__dirname, '..', 'playground', 'dist');
-    if (!fs.existsSync(PLAYGROUND_DIST)) {
-      fs.mkdirSync(PLAYGROUND_DIST, { recursive: true });
+    // Step 5: Copy minified browser version to playground/public/dist
+    console.log('📦 Copying browser version to playground/public/dist...');
+    const PLAYGROUND_PUBLIC_DIST = path.join(__dirname, '..', 'playground', 'public', 'dist');
+    if (!fs.existsSync(PLAYGROUND_PUBLIC_DIST)) {
+      fs.mkdirSync(PLAYGROUND_PUBLIC_DIST, { recursive: true });
     }
-    fs.copyFileSync(MIN_FILE, path.join(PLAYGROUND_DIST, 'index.min.js'));
+    fs.copyFileSync(MIN_FILE, path.join(PLAYGROUND_PUBLIC_DIST, 'index.min.js'));
     if (fs.existsSync(`${MIN_FILE}.map`)) {
-      fs.copyFileSync(`${MIN_FILE}.map`, path.join(PLAYGROUND_DIST, 'index.min.js.map'));
+      fs.copyFileSync(`${MIN_FILE}.map`, path.join(PLAYGROUND_PUBLIC_DIST, 'index.min.js.map'));
     }
-    console.log(`✅ Files copied to: ${PLAYGROUND_DIST}\n`);
+    console.log(`✅ Files copied to: ${PLAYGROUND_PUBLIC_DIST}\n`);
 
     // Step 6: Display build summary
     console.log('📊 Build Summary:');

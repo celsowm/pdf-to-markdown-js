@@ -207,7 +207,7 @@ export class PdfParser {
         const objContent = this.pdfReader.extractObjectBuffer(contents.objNum, xrefTable);
         const objDict = ObjectParser.parseContent(objContent);
         if (isStream(objDict)) {
-          streamContent = objDict.content.toString('binary');
+          streamContent = objDict.content;
         }
       } catch (e) {
         logger.warn(`Failed to extract content stream for obj ${contents.objNum}`, e);
@@ -220,7 +220,7 @@ export class PdfParser {
             const objContent = this.pdfReader.extractObjectBuffer(elem.objNum, xrefTable);
             const objDict = ObjectParser.parseContent(objContent);
             if (isStream(objDict)) {
-              streamContent += objDict.content.toString('binary');
+              streamContent += objDict.content;
             }
           } catch (e) {
              logger.warn(`Failed to extract one of the content streams for page ${pageIndex + 1}`, e);
@@ -244,27 +244,27 @@ export class PdfParser {
     };
   }
 
-  private getNumericValue(obj: PdfObject): number {
+  private getNumericValue(obj: PdfObject | null): number {
     return isNumber(obj) ? obj.value : 0;
   }
 }
 
 // Type Guards mirrored from ObjectParser/ResourceManager
-function isReference(obj: PdfObject): obj is { type: 'reference'; objNum: number; genNum: number } {
-  return obj && obj.type === 'reference';
+function isReference(obj: PdfObject | null): obj is { type: 'reference'; objNum: number; genNum: number } {
+  return obj !== null && obj.type === 'reference';
 }
-function isDictionary(obj: PdfObject): obj is PdfDictionary {
-  return obj && obj.type === 'dictionary';
+function isDictionary(obj: PdfObject | null): obj is PdfDictionary {
+  return obj !== null && obj.type === 'dictionary';
 }
-function isArray(obj: PdfObject): obj is { type: 'array'; elements: PdfObject[] } {
-  return obj && obj.type === 'array';
+function isArray(obj: PdfObject | null): obj is { type: 'array'; elements: PdfObject[] } {
+  return obj !== null && obj.type === 'array';
 }
-function isStream(obj: PdfObject): obj is PdfStream {
-  return obj && obj.type === 'stream';
+function isStream(obj: PdfObject | null): obj is PdfStream {
+  return obj !== null && obj.type === 'stream';
 }
-function isNumber(obj: PdfObject): obj is { type: 'number'; value: number } {
-  return obj && obj.type === 'number';
+function isNumber(obj: PdfObject | null): obj is { type: 'number'; value: number } {
+  return obj !== null && obj.type === 'number';
 }
-function isName(obj: PdfObject): obj is { type: 'name'; value: string } {
-  return obj && obj.type === 'name';
+function isName(obj: PdfObject | null): obj is { type: 'name'; value: string } {
+  return obj !== null && obj.type === 'name';
 }

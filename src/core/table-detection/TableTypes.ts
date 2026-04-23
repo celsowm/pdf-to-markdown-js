@@ -4,7 +4,7 @@
  */
 
 import type { TextElement } from '../../models/TextElement';
-import type { LineSegment, FillRegion } from '../core/TextExtractor';
+import type { LineSegment, FillRegion } from '../TextExtractor';
 
 
 /**

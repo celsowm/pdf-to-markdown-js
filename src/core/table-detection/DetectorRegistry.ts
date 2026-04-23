@@ -128,7 +128,7 @@ export class DetectorRegistry {
   /**
    * Merges or removes overlapping tables to prevent duplicates.
    */
-  private mergeOverlappingTables(tables: DetectedTable[]): DetectedTable[] {
+  public mergeOverlappingTables(tables: DetectedTable[]): DetectedTable[] {
     if (tables.length <= 1) return tables;
 
     const result: DetectedTable[] = [];
